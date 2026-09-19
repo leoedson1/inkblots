@@ -35,6 +35,14 @@
   <div class="tabbar" id="tabbar"></div>
 
   <div id="canvas">
+    <div id="empty-workspace" hidden>
+      <h2>No file open</h2>
+      <div class="empty-actions">
+        <button class="btn primary" id="empty-new">New file</button>
+        <button class="btn" id="empty-open">Open file…</button>
+        <button class="btn" id="empty-close">Close Inkweave</button>
+      </div>
+    </div>
     <div id="world">
       <svg id="edges"><g id="egroup" transform="translate(6000,6000)"></g></svg>
       <div id="nodes"></div>

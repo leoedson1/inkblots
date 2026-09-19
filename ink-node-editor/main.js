@@ -210,6 +210,9 @@ ipcMain.handle('saveDialog', async (_e, suggested) => {
 
 ipcMain.handle('write', async (_e, p, text) => { fs.writeFileSync(p, text, 'utf8'); return true; });
 ipcMain.handle('read', async (_e, p) => fs.readFileSync(p, 'utf8'));
+ipcMain.on('close-window', (event) => {
+  if (win && event.sender === win.webContents) win.close();
+});
 // The Ink compiler needs synchronous INCLUDE reads. Keep Node filesystem APIs
 // here so the preload can run with Electron's default sandbox enabled.
 ipcMain.on('readRelative', (event, basePath, name) => {

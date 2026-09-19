@@ -3,6 +3,18 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.1.3] - 2026-09-19
+
+- Keep an empty workspace after closing the last tab and improve connection routing
+
+- Closing the final tab now shows New file, Open file, and Close Inkweave instead of creating another untitled tab. Editing controls and shortcuts remain inactive until a file is opened or created.
+- Forward links use bounded smooth curves; backward and self-links use rounded routes outside their endpoint cards instead of fixed looping curves.
+- Added Electron workspace checks and a regression check for the native close request.
+
+Validation: all 11 unit tests, Electron workspace/routing checks, and inspector checks at four zoom levels passed. Empty-workspace and routing screenshots were visually inspected.
+
+Build: Windows NSIS installer generated; packaged version and both fixes verified in app.asar. Installer installation was not tested.
+
 ## [0.1.2] - 2026-09-19
 
 - Fixed inspector text selection alignment by matching the highlighted code and textarea fonts.

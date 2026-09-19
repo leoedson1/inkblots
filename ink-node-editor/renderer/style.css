@@ -216,6 +216,13 @@ button { cursor: pointer; }
   cursor: default;
 }
 #canvas.panning { cursor: grabbing; }
+#app.empty { grid-template-columns: 1fr; }
+#app.empty #side, #app.empty #world { display: none; }
+#app.empty #canvas { background-image: none; }
+#empty-workspace:not([hidden]) { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+#empty-workspace h2 { margin: 0; font-size: 18px; font-weight: 500; color: var(--fg-dim); }
+.empty-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.btn:disabled { opacity: .4; cursor: default; }
 #world { position: absolute; inset: 0; transform-origin: 0 0; }
 #edges { position: absolute; left: -6000px; top: -6000px; width: 14000px; height: 14000px; pointer-events: none; overflow: visible; }
 #edges path { fill: none; stroke-linecap: round; }

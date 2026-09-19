@@ -329,14 +329,25 @@ function switchTab(i) {
   refreshChrome();
 }
 
-// closing the last tab never leaves zero — a fresh blank one takes its place
+// Closing the last tab leaves an empty workspace, not another document.
 function closeTab(i) {
   const t = Tabs[i];
   if (!t) return;
   if (i === activeTab) flushPendingEdit();   // so `t.dirty` reflects any edit still mid-debounce
   const doClose = () => {
     Tabs.splice(i, 1);
-    if (!Tabs.length) Tabs.push(makeTab(nextUntitledName()));
+    if (!Tabs.length) {
+      closeOverlays();
+      drag = link = pan = null;
+      activeTab = -1;
+      // Keep a detached, empty view model for resize/render callbacks. It is
+      // never a document and cannot be saved or edited while no tab is open.
+      State = makeTab('');
+      try { localStorage.removeItem('inkweave-autosave'); } catch (e) {}
+      refreshChrome();
+      $('#empty-open').focus();
+      return;
+    }
     let next;
     if (i < activeTab) next = activeTab - 1;
     else if (i > activeTab) next = activeTab;
@@ -521,14 +532,31 @@ function inletFor(nodeId) {
   return [pos[0], pos[1] + Math.min(22, n._el.offsetHeight / 2)];
 }
 
-function path(a, b) {
-  const dx = Math.max(60, Math.abs(b[0] - a[0]) * 0.5);
-  // loop back around when the target sits to the left
-  if (b[0] < a[0] + 40) {
-    const mid = (a[1] + b[1]) / 2 + 90;
-    return `M${a[0]},${a[1]} C${a[0] + 80},${a[1]} ${a[0] + 60},${mid} ${(a[0] + b[0]) / 2},${mid} C${b[0] - 70},${mid} ${b[0] - 80},${b[1]} ${b[0]},${b[1]}`;
+function path(a, b, bounds) {
+  const gap = b[0] - a[0];
+  if (gap >= 40 && !bounds?.self) {
+    const dx = Math.min(180, gap * 0.5);
+    return `M${a[0]},${a[1]} C${a[0] + dx},${a[1]} ${b[0] - dx},${b[1]} ${b[0]},${b[1]}`;
   }
-  return `M${a[0]},${a[1]} C${a[0] + dx},${a[1]} ${b[0] - dx},${b[1]} ${b[0]},${b[1]}`;
+  // Return links and self-links go outside both endpoint cards. Rounded
+  // corners preserve horizontal entry/exit without the old looping S-kinks.
+  const clearance = 32 + (bounds?.lane || 0) * 12;
+  const right = Math.max(a[0], bounds?.right ?? a[0]) + clearance;
+  const left = Math.min(b[0], bounds?.left ?? b[0]) - clearance;
+  const bottom = Math.max(a[1], b[1], bounds?.bottom ?? Math.max(a[1], b[1])) + clearance;
+  const points = [a, [right, a[1]], [right, bottom], [left, bottom], [left, b[1]], b];
+  let d = `M${a[0]},${a[1]}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1], cur = points[i], next = points[i + 1];
+    const incoming = Math.hypot(cur[0] - prev[0], cur[1] - prev[1]);
+    const outgoing = Math.hypot(next[0] - cur[0], next[1] - cur[1]);
+    const r = Math.min(16, incoming / 2, outgoing / 2);
+    if (!r) continue;
+    const before = cur.map((v, j) => v + (prev[j] - v) * r / incoming);
+    const after = cur.map((v, j) => v + (next[j] - v) * r / outgoing);
+    d += ` L${before} Q${cur} ${after}`;
+  }
+  return d + ` L${b}`;
 }
 
 function drawEdges() {
@@ -537,9 +565,14 @@ function drawEdges() {
   for (const e of State.edges) {
     const a = anchorFor(e.from, e.idx), b = inletFor(e.to);
     if (!a || !b) continue;
-    const dstr = e.from === e.to
-      ? `M${a[0]},${a[1]} C${a[0] + 90},${a[1] - 40} ${b[0] - 90},${b[1] - 50} ${b[0]},${b[1]}`
-      : path(a, b);
+    const from = State.nodes[e.from], to = State.nodes[e.to];
+    const fp = State.layout[e.from], tp = State.layout[e.to];
+    const dstr = path(a, b, {
+      self: e.from === e.to, lane: Math.max(0, e.idx),
+      left: Math.min(fp[0], tp[0]),
+      right: Math.max(fp[0] + from._el.offsetWidth, tp[0] + to._el.offsetWidth),
+      bottom: Math.max(fp[1] + from._el.offsetHeight, tp[1] + to._el.offsetHeight),
+    });
     const p = document.createElementNS(ns, 'path');
     p.setAttribute('d', dstr);
     p.setAttribute('class', 'e-' + e.kind);
@@ -555,6 +588,19 @@ function applyTransform() {
 }
 
 function updateStatus() {
+  const empty = Tabs.length === 0;
+  $('#app').classList.toggle('empty', empty);
+  $('#empty-workspace').hidden = !empty;
+  for (const id of ['b-save', 'b-ink', 'b-addknot', 'b-layout', 'b-source', 'b-play', 'search', 'b-zoomout', 'b-zoomfit', 'b-zoomin']) $('#' + id).disabled = empty;
+  $('#st-hint').textContent = empty ? '' : 'Drag a pill onto another knot to redirect it';
+  if (empty) {
+    $('#st-counts').textContent = ''; $('#st-words').textContent = '';
+    $('#st-state').textContent = 'No file open'; $('#st-dot').className = 'dot';
+    $('#filename').textContent = ''; document.title = 'Inkweave';
+    renderTabBar();
+    if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(false, '');
+    return;
+  }
   const knots = State.order.filter(id => State.nodes[id].kind !== 'stitch' && id !== START_ID).length;
   const stitches = State.order.filter(id => State.nodes[id].kind === 'stitch').length;
   const words = State.order.reduce((a, id) => a + (State.nodes[id].body.match(/[A-Za-z']+/g) || []).length, 0);
@@ -935,6 +981,7 @@ function select(id) {
 let drag = null, link = null, pan = null;
 
 canvas.addEventListener('mousedown', (ev) => {
+  if (!Tabs.length) return;
   const pill = ev.target.closest('.pill');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
@@ -1033,6 +1080,7 @@ canvas.addEventListener('click', (ev) => {
 });
 
 canvas.addEventListener('dblclick', (ev) => {
+  if (!Tabs.length) return;
   if (ev.target.closest('.node')) { return; }
   const w = screenToWorld(ev.clientX, ev.clientY);
   ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', (name) => {
@@ -1131,6 +1179,7 @@ async function openFile() {
 }
 
 async function saveFile(forceDialog) {
+  if (!Tabs.length) return;
   flushPendingEdit();
   const { text } = serialize(true);
   if (NATIVE) {
@@ -1510,6 +1559,12 @@ $('#b-ink').addEventListener('mousedown', (e) => {
 window.addEventListener('mousedown', (e) => { if (!e.target.closest('.menu-anchor')) closeInkMenu(); });
 
 $('#b-open').onclick = openFile;
+$('#empty-open').onclick = openFile;
+$('#empty-new').onclick = newFile;
+$('#empty-close').onclick = () => {
+  if (NATIVE && NATIVE.closeWindow) NATIVE.closeWindow();
+  else window.close();
+};
 $('#b-save').onclick = () => saveFile(false);
 $('#b-new').onclick = newFile;
 $('#b-addknot').onclick = () => ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', n => { if (n) addKnot(n); });
@@ -1537,6 +1592,11 @@ try { const t = localStorage.getItem('inkweave-theme'); if (t) document.document
 window.addEventListener('keydown', (e) => {
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
   const mod = e.metaKey || e.ctrlKey;
+  if (!Tabs.length) {
+    if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); openFile(); }
+    else if (mod && e.key.toLowerCase() === 'n') { e.preventDefault(); newFile(); }
+    return;
+  }
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); saveFile(e.shiftKey); }
   else if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); openFile(); }
   else if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#search').focus(); }
@@ -1628,6 +1688,7 @@ window.addEventListener('drop', async (e) => {
 
 if (NATIVE && NATIVE.onMenu) {
   NATIVE.onMenu((cmd, arg) => {
+    if (!Tabs.length && !['new', 'open', 'openPaths'].includes(cmd)) return;
     if (cmd === 'new') newFile();
     else if (cmd === 'open') openFile();
     else if (cmd === 'save') saveFile(false);

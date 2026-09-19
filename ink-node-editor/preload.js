@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld('inkNative', {
   setEdited: (edited, name) => ipcRenderer.send('edited', edited, name),
   onMenu: (cb) => ipcRenderer.on('menu', (_e, cmd, arg) => cb(cmd, arg)),
   platform: process.platform,
+  closeWindow: () => ipcRenderer.send('close-window'),
 });

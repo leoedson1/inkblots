@@ -148,6 +148,14 @@ test('Clean window closes without a dialog', async () => {
   assert.equal(h.dialogs, 0); assert.equal(h.win.closed, true);
 });
 
+test('Empty-workspace close request uses the normal window close flow', async () => {
+  const h = await harness({ dirty: false });
+  h.ipcMain.emit('close-window', { sender: {} });
+  await tick(); assert.equal(h.win.closed, false);
+  h.ipcMain.emit('close-window', { sender: h.win.webContents });
+  await tick(); assert.equal(h.win.closed, true);
+});
+
 test('Sandboxed preload exposes native bridge and propagates INCLUDE read errors', async () => {
   const h = await harness();
   assert.equal(h.win.options.webPreferences.sandbox, true);
