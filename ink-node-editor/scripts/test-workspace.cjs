@@ -8,7 +8,7 @@ if (!process.versions.electron) {
 }
 const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('node:fs');
-app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkweave-workspace-test-')));
+app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkblots-workspace-test-')));
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, width: 1440, height: 1000, titleBarStyle: 'hidden',
     titleBarOverlay: {color:'#161a23',symbolColor:'#e3e7f0',height:48},

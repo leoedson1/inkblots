@@ -31,7 +31,7 @@
     ]],
     ['Story', [
       ['Insert Ink at cursor…', () => { const r = document.querySelector('#canvas').getBoundingClientRect(); window.InkblotsCanvas.openQuick(r.left+r.width/2,r.top+r.height/2); }, 'Shift+A', true],
-      ['New zone / group…', () => window.InkblotsCanvas.addZone(), '', true],
+      ['Group selected nodes', () => window.InkblotsCanvas.addZone(), 'Ctrl+G', true],
       ['Sticky note', () => window.InkblotsCanvas.addNote(), '', true],
       ['Add knot…', () => click('b-addknot'), '', true], ['Tidy layout', () => click('b-layout'), 'Ctrl+L', true],
       ['Full script', () => click('b-source'), 'Ctrl+E', true], ['Play', () => click('b-play'), 'Ctrl+Enter', true],
@@ -41,7 +41,7 @@
       ['Previous tab', () => A.switchTab((A.activeTab - 1 + A.Tabs.length) % A.Tabs.length), 'Ctrl+Shift+Tab', true],
       ['Minimize', () => native('minimize')], ['Maximize / restore', () => native('maximize')],
     ]],
-    ['Help', [['Ink writing guide', () => native('help')]]],
+    ['Help', [['Inkblots user guide', () => window.showInkblotsGuide()], ['Ink writing guide', () => native('help')]]],
   ];
   function edit(action) {
     if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) native(action);
@@ -132,6 +132,7 @@
     }
   });
   window.addEventListener('keydown', e => {
+    if (document.querySelector('#user-guide[open]')) return;
     const mod = e.ctrlKey || e.metaKey, key = e.key.toLowerCase();
     if (e.key === 'F10' || (e.altKey && key === 'f')) {
       e.preventDefault(); previousFocus = document.activeElement; nav.querySelector('.menu-top').focus(); openMenu(nav.querySelector('.menu-top'), e.altKey); return;
@@ -140,6 +141,7 @@
     let action;
     if (mod && key === 'n') action = () => A.newFile();
     else if (mod && key === 'w') action = () => A.closeTab(A.activeTab);
+    else if (mod && key === 'g' && A.Tabs.length && A.State.selection.length && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName) && !e.target.isContentEditable && !$('scrim').classList.contains('open')) action = () => window.InkblotsCanvas.addZone();
     else if (mod && key === 'l' && A.Tabs.length) action = () => click('b-layout');
     else if (mod && key === 'e' && A.Tabs.length) action = () => click('b-source');
     else if (e.ctrlKey && e.key === 'Tab' && A.Tabs.length) action = () => A.switchTab((A.activeTab + (e.shiftKey ? A.Tabs.length - 1 : 1)) % A.Tabs.length);

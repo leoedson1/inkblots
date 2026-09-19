@@ -39,12 +39,24 @@
   }
   function addZone(point = center()) {
     if (!A.Tabs.length) return;
-    const s = state(), ids = s.selection.slice(), b = nodeBounds(ids);
-    A.ask('New zone', 'A named area for organizing your story. Drag its header to move its member nodes.', 'New zone', name => {
-      if (!name || state() !== s) return;
-      mutate(() => data().zones.push({id:uid(),name,members:ids,x:b ? b.x-30 : point[0],y:b ? b.y-58 : point[1],w:b ? b.w+60 : 420,h:b ? b.h+88 : 280,color:'blue'}));
-    });
+    const ids = state().selection.slice(), b = nodeBounds(ids);
+    const names = new Set(data().zones.map(z => z.name));
+    let name = 'Zone', i = 2;
+    while (names.has(name)) name = 'Zone ' + i++;
+    mutate(() => data().zones.push({id:uid(),name,members:ids,x:b ? b.x-30 : point[0],y:b ? b.y-58 : point[1],w:b ? b.w+60 : 420,h:b ? b.h+88 : 280,color:'blue'}));
   }
+  // Preserve manually added space, expanding every edge as members move or grow.
+  function containMembers() {
+    for (const z of data().zones) {
+      const b = nodeBounds(z.members); if (!b) continue;
+      const right = Math.max(z.x+z.w,b.x+b.w+30), bottom = Math.max(z.y+z.h,b.y+b.h+30);
+      z.x = Math.min(z.x,b.x-30); z.y = Math.min(z.y,b.y-58);
+      z.w = right-z.x; z.h = bottom-z.y;
+      const card = [...zones.children].find(el => el.dataset.id === z.id);
+      if (card) position(card,z);
+    }
+  }
+
   function addNote(point = center()) {
     if (!A.Tabs.length) return;
     const id = uid();
@@ -129,7 +141,7 @@
       for(const [id,origin] of drag.members){state().layout[id]=[origin[0]+dx,origin[1]+dy];const el=state().nodes[id]._el;if(el){el.style.left=state().layout[id][0]+'px';el.style.top=state().layout[id][1]+'px';}}
       A.drawEdges();
     }
-    position(drag.element,drag.item);drawMap();
+    containMembers();position(drag.element,drag.item);drawMap();
   });
   window.addEventListener('mouseup', () => {
     if(box){const b=box.bounds;if(box.s===state())selectMany(state().order.filter(id=>{const n=state().nodes[id],p=state().layout[id];return n._el && p[0]<b.x+b.w && p[0]+n._el.offsetWidth>b.x && p[1]<b.y+b.h && p[1]+n._el.offsetHeight>b.y;}));box=null;marquee.hidden=true;}
@@ -143,7 +155,7 @@
   let tipTimer;
   function hideComments(){clearTimeout(tipTimer);tip.hidden=true;}
   function showComments(list,target){
-    clearTimeout(tipTimer);tip.textContent='';tip.appendChild(make('div','comments-title','Comments'));
+    clearTimeout(tipTimer);tip.textContent='';tip.appendChild(make('div','comments-title','Comments ('+list.length+')'));
     list.forEach((c,i)=>{if(i)tip.appendChild(document.createElement('hr'));tip.appendChild(make('p','',c.text));});
     tip.hidden=false;const r=target.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,r.right+8))+'px';tip.style.top=Math.max(8,Math.min(innerHeight-tip.offsetHeight-8,r.top))+'px';
   }
@@ -152,7 +164,7 @@
     $('#nodes').querySelectorAll('.comment-badge').forEach(el=>el.remove());
     $('#nodes').querySelectorAll('.pill[data-idx]').forEach(el=>{el.onmouseenter=null;el.onmouseleave=null;});
     for(const id of state().order){const n=state().nodes[id];if(!n._el)continue;const list=comments(n.body);if(!list.length)continue;
-      const badge=button('▱',list.length+' comment'+(list.length===1?'':'s'),()=>showComments(list,badge));badge.className='comment-badge';badge.setAttribute('aria-describedby','comments-tooltip');
+      const badge=button('▱',list.length+' comment'+(list.length===1?'':'s'),()=>showComments(list,badge));badge.removeAttribute('title');badge.className='comment-badge';badge.setAttribute('aria-describedby','comments-tooltip');
       badge.onmouseenter=badge.onfocus=()=>showComments(list,badge);badge.onmouseleave=badge.onblur=delayedHide;n._el.querySelector('.head').appendChild(badge);
       n._el.querySelectorAll('.pill[data-idx]').forEach(p=>{const line=n.diverts[Number(p.dataset.idx)]?.line;const inline=list.filter(c=>c.line===line);if(inline.length){p.onmouseenter=()=>showComments(inline,p);p.onmouseleave=delayedHide;}});
     }
@@ -210,10 +222,10 @@
   function render(){
     if(drag?.s!==state())drag=null;
     if(box?.s!==state()){box=null;marquee.hidden=true;}
-    closeQuick();hideComments();data();renderItems('zones',zones);renderItems('notes',notes);attachComments();updateSelection();drawMap();
+    closeQuick();hideComments();data();containMembers();renderItems('zones',zones);renderItems('notes',notes);attachComments();updateSelection();drawMap();
   }
   window.addEventListener('inkblots-render',render);
-  window.addEventListener('inkblots-view',()=>{hideComments();drawMap();});
+  window.addEventListener('inkblots-view',()=>{hideComments();containMembers();drawMap();});
   window.addEventListener('inkblots-selection',updateSelection);
   window.addEventListener('resize',()=>{closeQuick();drawMap();});
   window.addEventListener('blur',()=>{closeQuick();hideComments();box=null;marquee.hidden=true;if(drag?.moved)A.setDirty(true);drag=null;miniDrag=false;});

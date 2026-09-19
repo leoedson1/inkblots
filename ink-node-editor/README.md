@@ -78,7 +78,7 @@ In the desktop app, `Ctrl+W`/`Cmd+W` closes the current tab and `Ctrl+Tab` / `Ct
 The `.ink` file is the only source of truth — there is no side-car project format. Node positions are stored in one comment at the end of the file:
 
 ```ink
-// --- inkweave layout (safe to delete) ---
+// --- Inkblots layout (safe to delete) ---
 // @layout {"forest":[410,80],"cottage":[740,260]}
 ```
 
@@ -107,3 +107,5 @@ renderer/
 ## What this doesn't do (yet)
 
 Sessions aren't restored across restarts in the desktop app — each launch starts with one tab, same as before tabs existed. (The browser build's autosave-to-localStorage does cover a page refresh, since that was already there for the single-document version and now just covers every open tab instead of one.) There's also no way to open a second, separate *window* — multiple files always share one window's tab bar. Both are reasonable follow-ups if you want them, just not things this pass added.
+
+Help → Inkblots user guide contains a quick editor reference. Ink → Full stories → The Lantern Archive demonstrates the language and canvas tools. Ctrl+G immediately groups selected nodes; double-click the zone title to rename. Zones expand to keep members inside, preserving manually added space.

@@ -33,7 +33,7 @@ app.whenReady().then(async()=>{
       mouse(A.State.nodes.arrival._el.querySelector('.nm'),'mousedown',rect1.left+35,rect1.top+15);mouse(window,'mousemove',rect1.left+85,rect1.top+45);mouse(window,'mouseup',rect1.left+85,rect1.top+45);
       check(A.State.layout.arrival[0]===original[0]+50 && A.State.layout.platform[0]===other[0]+50,'Dragging a selected node moves the selection');
       A.undo();check(A.State.layout.arrival[0]===original[0] && A.State.layout.platform[0]===other[0],'Multi-node movement is undoable');
-      C.selectMany(['arrival','platform']);C.addZone();$('#m-input').value='Station';$('#m-ok').click();
+      C.selectMany(['arrival','platform']);$('#canvas').dispatchEvent(new KeyboardEvent('keydown',{key:'g',ctrlKey:true,bubbles:true,cancelable:true}));check(!$('#scrim').classList.contains('open'),'Ctrl+G creates a zone without a name prompt');
       check(A.State.organizer.zones[0].members.length===2,'Zone contains the selected nodes');
       let zone=A.State.organizer.zones[0],zid=zone.id;const zrect=$('.zone .organizer-title').getBoundingClientRect();
       mouse($('.zone .organizer-title'),'mousedown',zrect.left+5,zrect.top+5);mouse(window,'mousemove',zrect.left+35,zrect.top+35);mouse(window,'mouseup',zrect.left+35,zrect.top+35);
@@ -41,10 +41,23 @@ app.whenReady().then(async()=>{
       const handle=$('.zone .organizer-resize').getBoundingClientRect(),oldWidth=zone.w;
       mouse($('.zone .organizer-resize'),'mousedown',handle.left+4,handle.top+4);mouse(window,'mousemove',handle.left+64,handle.top+44);mouse(window,'mouseup',handle.left+64,handle.top+44);
       check(zone.w===oldWidth+60,'Zone can be resized');
+      const contains = () => A.State.organizer.zones.every(z => z.members.every(id => {
+        const p=A.State.layout[id], el=A.State.nodes[id]._el;
+        return z.x<=p[0]-30 && z.y<=p[1]-58 && z.x+z.w>=p[0]+el.offsetWidth+30 && z.y+z.h>=p[1]+el.offsetHeight+30;
+      }));
+      for (const [dx,dy] of [[-650,0],[0,-450],[1100,0],[0,900]]) {
+        C.selectMany(['arrival']); const r=A.State.nodes.arrival._el.getBoundingClientRect();
+        mouse(A.State.nodes.arrival._el.querySelector('.nm'),'mousedown',r.left+30,r.top+15);
+        mouse(window,'mousemove',r.left+30+dx,r.top+15+dy);mouse(window,'mouseup',r.left+30+dx,r.top+15+dy);
+        check(contains(),'Zone contains member after move '+dx+','+dy);
+        A.undo();check(contains(),'Zone and member undo together '+dx+','+dy);
+      }
+      zone=A.State.organizer.zones[0];
       C.addNote([820,140]);const note=$('.sticky-note textarea');note.value='Check the pacing.\\nKeep this scene quiet.';note.dispatchEvent(new Event('input',{bubbles:true}));
       check(A.State.organizer.notes[0].text.includes('Keep this scene'),'Sticky-note editing updates document state');
       check(A.State.dirty,'Canvas edits mark the document dirty');
       const badge=A.State.nodes.arrival._el.querySelector('.comment-badge');badge.dispatchEvent(new MouseEvent('mouseenter'));
+      check(!badge.hasAttribute('title') && $('.comments-title').textContent==='Comments (4)','Comment count appears only in custom header');
       check($('#comments-tooltip').querySelectorAll('p').length===4,'Node comment balloon shows all comments');
       check($('#comments-tooltip').querySelectorAll('hr').length===3,'Comment tooltip separates each comment');
       check(A.State.nodes.arrival._el.querySelectorAll('.comment-badge').length===1,'One comment balloon per node after organization edits');
@@ -85,6 +98,21 @@ app.whenReady().then(async()=>{
       check(A.State.selection.includes('arrival') && A.State.selection.includes('platform'),'Box selection stays aligned after zoom');
       C.selectMany(['arrival','platform']);
       A.State.nodes.arrival._el.querySelector('.comment-badge').dispatchEvent(new MouseEvent('mouseenter'));
+      check(A.serialize(true).text.includes('// --- Inkblots layout'),'Saved metadata uses current name');
+      const legacy=A.parse(A.serialize(true).text.replace('// --- Inkblots layout','// --- inkweave layout'));
+      check(legacy.organizer.zones.length && !legacy.nodes['::start']?.body.includes('inkweave layout'),'Legacy layout remains readable');
+      const originalNames=A.Tabs.map(t=>t.fileName);
+      A.Tabs.forEach((t,i)=>t.fileName='temporary-'+i+'.ink');
+      A.newFile();check(A.State.fileName==='Untitled.ink','First available untitled name is reused');
+      A.newFile();check(A.State.fileName==='Untitled-2.ink','Next available untitled name is allocated');
+      A.newFile();check(A.State.fileName==='Untitled-3.ink','Open untitled names are unique');
+      A.Tabs[A.activeTab-1].fileName='renamed.ink';A.newFile();check(A.State.fileName==='Untitled-2.ink','Lowest available gap is reused');
+      const help=[...document.querySelectorAll('[aria-label="Help"] button')].find(b=>b.textContent.includes('Inkblots user guide'));help.click();
+      check($('#user-guide').open && $('#user-guide').textContent.includes('Ctrl+G'),'Help opens the quick user guide');
+      $('#user-guide button').click();check(!$('#user-guide').open,'User guide closes');
+      const tour=window.INK_SNIPPETS.flatMap(g=>g.items).find(it=>it.id==='story-inkblots-tour');A.applySnippet(tour);
+      check(A.State.organizer.zones.length===3 && A.State.organizer.notes.length===1,'Showcase loads its zones and sticky note');
+      check(A.compile().story,'Showcase compiles in the editor');
       return checks;
     })()`);
     console.log(report.map(x=>'PASS '+x).join('\n'));
@@ -93,6 +121,8 @@ app.whenReady().then(async()=>{
     await win.webContents.executeJavaScript(`document.documentElement.setAttribute('data-theme','light');`);
     await win.webContents.capturePage();await new Promise(r=>setTimeout(r,150));
     fs.writeFileSync(path.join(out,'canvas-tools-light.png'),(await win.webContents.capturePage()).toPNG());
+    await win.webContents.executeJavaScript('window.showInkblotsGuide()');
+    fs.writeFileSync(path.join(out,'user-guide.png'),(await win.webContents.capturePage()).toPNG());
     app.exit(0);
   }catch(e){console.error(e);app.exit(1);}
 });

@@ -513,3 +513,8 @@ button { cursor: pointer; }
 .toast.show { opacity: 1; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+#user-guide { width: min(760px, 88vw); max-height: 82vh; overflow: auto; padding: 24px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); line-height: 1.65; }
+#user-guide::backdrop { background: #0009; }
+#user-guide header { position: static; display: flex; justify-content: space-between; align-items: center; padding: 0; height: auto; background: none; -webkit-app-region: no-drag; }
+#user-guide h2 { margin: 0; } #user-guide h3 { margin-bottom: 4px; } #user-guide p { margin-top: 8px; }

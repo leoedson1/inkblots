@@ -10,7 +10,7 @@ if (!process.versions.electron) {
 }
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
-app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkweave-inspector-test-')));
+app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkblots-inspector-test-')));
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, width: 900, height: 700 });
   win.webContents.on('console-message', (_event, _level, message) => console.log(message));

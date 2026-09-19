@@ -3,6 +3,19 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.4.0] - 2026-09-19
+
+- Improve grouping and naming, add the Inkblots user guide and Lantern Archive showcase
+
+- Zones expand on every side when member nodes move or grow, including shared groups, and cannot be resized to clip members. Extra manually added space is preserved.
+- Ctrl+G creates a group immediately with a unique default name; double-click its title to rename later.
+- Comment balloons no longer show a delayed native tooltip; the custom Comments header displays the count.
+- New layout metadata uses Inkblots branding. Browser preferences migrate to Inkblots keys; legacy files remain readable. The installer ID remains unchanged for update continuity.
+- New untitled tabs reuse the lowest available name, beginning with Untitled.ink.
+- Added Help → Inkblots user guide and Ink → Full stories → The Lantern Archive, a playable showcase with zones, notes, comments, branching choices, lists, variables, stitches, tunnels, functions, tags and text variations.
+
+Validation: 17 unit tests passed, including four complete showcase routes and early departure. All 56 hidden Electron canvas checks passed, including four-direction zone containment with undo, immediate Ctrl+G grouping, comment header count, legacy metadata, untitled naming gaps, guide opening/closing, and showcase loading/compilation. Existing workspace checks and inspector alignment at four zoom levels passed. The guide screenshot was visually inspected. Windows NSIS installer `Inkblots Setup 0.4.0.exe` built successfully; packaged name/version and guide verified in app.asar. Installer installation was not tested.
+
 ## [0.3.0] - 2026-09-19
 
 - Rename the app to Inkblots and add canvas organization, comments, quick insertion, and minimap

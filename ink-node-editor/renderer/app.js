@@ -10,7 +10,16 @@ const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) 
 const esc = (s) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 const START_ID = '::start';
-const LAYOUT_MARK = '// --- inkweave layout (safe to delete) ---';
+const LAYOUT_MARK = '// --- Inkblots layout (safe to delete) ---';
+
+// Migrate browser preferences once; removing old keys prevents closed tabs returning.
+try {
+  for (const key of ['autosave', 'theme', 'side-width']) {
+    const legacy = localStorage.getItem('inkweave-' + key);
+    if (legacy !== null && localStorage.getItem('inkblots-' + key) === null) localStorage.setItem('inkblots-' + key, legacy);
+    localStorage.removeItem('inkweave-' + key);
+  }
+} catch (e) {}
 
 // One tab = one of these. `State` always points at whichever tab is active;
 // switching tabs just reassigns it, so every function below keeps working unchanged.
@@ -30,11 +39,10 @@ function makeTab(name) {
 let State = makeTab('Untitled.ink');
 let Tabs = [State];
 let activeTab = 0;
-let untitledCounter = 1;
-
 function nextUntitledName() {
-  const name = untitledCounter === 1 ? 'Untitled.ink' : `Untitled-${untitledCounter}.ink`;
-  untitledCounter++;
+  const used = new Set(Tabs.map(t => t.fileName.toLowerCase()));
+  let i = 1, name = 'Untitled.ink';
+  while (used.has(name.toLowerCase())) name = `Untitled-${++i}.ink`;
   return name;
 }
 
@@ -91,7 +99,7 @@ function stripLayout(src) {
     if (org) { try { organizer = JSON.parse(org[1]); } catch (e) {} continue; }
     const m = line.match(/^\s*\/\/\s*@layout\s+(\{.*\})\s*$/);
     if (m) { try { Object.assign(layout, JSON.parse(m[1])); } catch (e) {} continue; }
-    if (line.trim() === LAYOUT_MARK) continue;
+    if (line.trim() === LAYOUT_MARK || line.trim() === '// --- inkweave layout (safe to delete) ---') continue;
     kept.push(line);
   }
   return { src: kept.join('\n'), layout, organizer };
@@ -353,7 +361,7 @@ function closeTab(i) {
       // Keep a detached, empty view model for resize/render callbacks. It is
       // never a document and cannot be saved or edited while no tab is open.
       State = makeTab('');
-      try { localStorage.removeItem('inkweave-autosave'); } catch (e) {}
+      try { localStorage.removeItem('inkblots-autosave'); } catch (e) {}
       refreshChrome();
       $('#empty-open').focus();
       return;
@@ -1597,9 +1605,9 @@ $('#b-theme').onclick = () => {
   const cur = document.documentElement.getAttribute('data-theme');
   const next = cur === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  try { localStorage.setItem('inkweave-theme', next); } catch (e) {}
+  try { localStorage.setItem('inkblots-theme', next); } catch (e) {}
 };
-try { const t = localStorage.getItem('inkweave-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+try { const t = localStorage.getItem('inkblots-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 
 window.addEventListener('keydown', (e) => {
   const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
@@ -1636,7 +1644,7 @@ function clampSideWidth() {
   const handle = $('#side-resize'), side = $('#side');
   if (!handle || !side) return;
   try {
-    const saved = localStorage.getItem('inkweave-side-width');
+    const saved = localStorage.getItem('inkblots-side-width');
     if (saved) side.style.width = saved;
   } catch (e) {}
   clampSideWidth();
@@ -1660,7 +1668,7 @@ function clampSideWidth() {
     handle.classList.remove('dragging');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-    try { localStorage.setItem('inkweave-side-width', side.style.width); } catch (e) {}
+    try { localStorage.setItem('inkblots-side-width', side.style.width); } catch (e) {}
   });
 })();
 
@@ -1726,7 +1734,7 @@ function autosaveTick() {
   if (!Tabs.some(t => t.dirty)) return;
   flushPendingEdit();
   try {
-    localStorage.setItem('inkweave-autosave', JSON.stringify({
+    localStorage.setItem('inkblots-autosave', JSON.stringify({
       active: activeTab,
       tabs: Tabs.map(t => ({ name: t.fileName, dirty: t.dirty, src: serialize(true, t).text })),
     }));
@@ -1736,16 +1744,12 @@ function autosaveTick() {
 function boot() {
   let restored = false;
   try {
-    const cached = !NATIVE && localStorage.getItem('inkweave-autosave');
+    const cached = !NATIVE && localStorage.getItem('inkblots-autosave');
     if (cached) {
       const o = JSON.parse(cached);
       if (o && Array.isArray(o.tabs) && o.tabs.length) {
         Tabs = [];
         o.tabs.forEach(t => addTab(t.src, { name: t.name, dirty: !!t.dirty }));
-        Tabs.forEach(t => {
-          const m = t.fileName.match(/^Untitled(?:-(\d+))?\.ink$/);
-          if (m) untitledCounter = Math.max(untitledCounter, (m[1] ? Number(m[1]) : 1) + 1);
-        });
         activateTab(Math.min(o.active || 0, Tabs.length - 1));
         refreshChrome();
         restored = true;
@@ -1755,7 +1759,7 @@ function boot() {
   // `Tabs`/`State` already hold a placeholder tab from module init (so the
   // rest of the file always has a valid `State` to reference) — reuse it
   // here rather than adding a second one on top of it.
-  if (!restored) { State.fileName = nextUntitledName(); load(STARTER, {}); }
+  if (!restored) { State.fileName = 'Untitled.ink'; load(STARTER, {}); }
   setInterval(autosaveTick, 4000);
 }
 
