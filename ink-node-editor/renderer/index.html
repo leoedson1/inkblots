@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inkweave</title>
+<title>Inkblots</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
 
   <div class="bar">
-    <div class="brand">Ink<span>weave</span></div>
+    <div class="brand">Ink<span>blots</span></div>
     <div id="legacy-actions" hidden>
     <button class="btn" id="b-open">Open</button>
     <button class="btn" id="b-save">Save</button>
@@ -43,12 +43,14 @@
       <div class="empty-actions">
         <button class="btn primary" id="empty-new">New file</button>
         <button class="btn" id="empty-open">Open file…</button>
-        <button class="btn" id="empty-close">Close Inkweave</button>
+        <button class="btn" id="empty-close">Close Inkblots</button>
       </div>
     </div>
     <div id="world">
+      <div id="zones"></div>
       <svg id="edges"><g id="egroup" transform="translate(6000,6000)"></g></svg>
       <div id="nodes"></div>
+      <div id="notes"></div>
     </div>
 
     <div class="drawer" id="play">
@@ -118,6 +120,7 @@
 
 <script src="snippets.js"></script>
 <script src="app.js"></script>
+<script src="canvas-tools.js"></script>
 <script src="menus.js"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
   app.requestSingleInstanceLock = () => true;
   app.whenReady = () => Promise.resolve();
   app.quit = () => {};
-  const renderer = { window: { Inkweave: {
+  const renderer = { window: { Inkblots: {
     Tabs: [{ dirty: false, fileName: 'draft.ink' }],
     flushPendingEdit() { this.Tabs[0].dirty = dirty; },
   } } };
@@ -33,11 +33,11 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
     const start = source.indexOf('let modalCb = null;');
     const end = source.indexOf("$('#m-ok').onclick", start);
     const context = vm.createContext({ $, setTimeout,
-      Tabs: renderer.window.Inkweave.Tabs,
-      flushPendingEdit: () => renderer.window.Inkweave.flushPendingEdit(),
+      Tabs: renderer.window.Inkblots.Tabs,
+      flushPendingEdit: () => renderer.window.Inkblots.flushPendingEdit(),
     });
     vm.runInContext(source.slice(start, end), context);
-    renderer.window.Inkweave.confirmWindowClose = context.confirmWindowClose;
+    renderer.window.Inkblots.confirmWindowClose = context.confirmWindowClose;
     modal = { $, respond: context.closeModal, ask: context.ask };
   }
   class BrowserWindow extends EventEmitter {
@@ -69,7 +69,7 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
     __dirname: root, process: { platform: 'win32', argv: [] }, console,
   });
   await tick();
-  return { win, ipcMain, modal, tabs: renderer.window.Inkweave.Tabs,
+  return { win, ipcMain, modal, tabs: renderer.window.Inkblots.Tabs,
     get dialogs() { return dialogs; }, respond(response) { resolveDialog({ response }); } };
 }
 
@@ -96,7 +96,7 @@ test('Themed confirmation lists every unsaved file', async () => {
   const h = await harness({ themed: true });
   h.tabs.push({ dirty: true, fileName: 'second.ink' });
   h.win.close(); await tick();
-  assert.equal(h.modal.$('#m-title').textContent, 'Close Inkweave?');
+  assert.equal(h.modal.$('#m-title').textContent, 'Close Inkblots?');
   assert.match(h.modal.$('#m-desc').textContent, /2 files.*draft\.ink, second\.ink/);
   h.modal.respond(false); await tick(); assert.equal(h.win.closed, false);
 });

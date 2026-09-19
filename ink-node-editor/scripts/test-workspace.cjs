@@ -23,7 +23,7 @@ app.whenReady().then(async () => {
     await win.loadFile(path.join(__dirname, '../renderer/index.html'));
     await win.webContents.insertCSS('* { transition: none !important; animation: none !important; }');
     await win.webContents.executeJavaScript(`(async () => {
-      const A = window.Inkweave;
+      const A = window.Inkblots;
       const check = (ok, text) => { if (!ok) throw new Error(text); };
       A.State.dirty = true;
       A.closeTab(0);
@@ -49,10 +49,10 @@ app.whenReady().then(async () => {
       document.querySelector('#empty-close').click();
     })()`);
     await new Promise(resolve => setTimeout(resolve, 100));
-    if (closeRequests !== 1) throw new Error('Close Inkweave button did not request native close');
+    if (closeRequests !== 1) throw new Error('Close Inkblots button did not request native close');
     fs.writeFileSync(path.join(output, 'empty-workspace.png'), (await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`(async () => {
-      const A = window.Inkweave;
+      const A = window.Inkblots;
       A.openFilesInTabs([{name:'routing.ink',content:'=== origin ===\\nChoose a route.\\n+ [Forward] -> destination\\n+ [Again] -> origin\\n=== destination ===\\nReturn to the start.\\n-> origin'}]);
       A.State.layout.origin = [80, 60]; A.State.layout.destination = [530, 270];
       A.State.view = {x:0,y:0,k:1}; A.render();
@@ -69,7 +69,7 @@ app.whenReady().then(async () => {
     await new Promise(resolve => setTimeout(resolve, 200));
     fs.writeFileSync(path.join(output, 'connection-routing.png'), (await win.webContents.capturePage()).toPNG());
     await win.webContents.executeJavaScript(`(async () => {
-      const A = window.Inkweave;
+      const A = window.Inkblots;
       const check = (ok, msg) => { if (!ok) throw new Error(msg); };
       const tops = [...document.querySelectorAll('.menu-top')];
       check(tops.map(x=>x.textContent).join(',') === 'File,Edit,View,Story,Ink,Window,Help', 'Menu ordering');

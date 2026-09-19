@@ -41,7 +41,7 @@ async function confirmAndClose() {
   // native dialog below as a fallback if the renderer cannot show its UI.
   try {
     const approved = await win.webContents.executeJavaScript(`(function () {
-      var A = window.Inkweave;
+      var A = window.Inkblots;
       return A && A.confirmWindowClose ? A.confirmWindowClose() : null;
     })()`);
     if (typeof approved === 'boolean') {
@@ -53,7 +53,7 @@ async function confirmAndClose() {
   let names = [];
   try {
     names = await win.webContents.executeJavaScript(`(function () {
-      var A = window.Inkweave;
+      var A = window.Inkblots;
       if (!A) return [];
       if (A.flushPendingEdit) A.flushPendingEdit();
       return A.Tabs.filter(function (t) { return t.dirty; }).map(function (t) { return t.fileName; });
@@ -83,7 +83,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: '#11141b',
-    title: 'Inkweave',
+    title: 'Inkblots',
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#161a23', symbolColor: '#e3e7f0', height: 48 },
     webPreferences: {
@@ -190,7 +190,7 @@ ipcMain.on('readRelative', (event, basePath, name) => {
 ipcMain.on('edited', (_e, edited, name) => {
   if (!win) return;
   win.setDocumentEdited(edited);
-  win.setTitle(name ? (edited ? '• ' : '') + name + ' — Inkweave' : 'Inkweave');
+  win.setTitle(name ? (edited ? '• ' : '') + name + ' — Inkblots' : 'Inkblots');
 });
 
 // one window, many tabs: a second launch (or "Open with" on another file)

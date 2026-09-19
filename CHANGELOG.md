@@ -3,6 +3,22 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.3.0] - 2026-09-19
+
+- Rename the app to Inkblots and add canvas organization, comments, quick insertion, and minimap
+
+- Renamed the application, window title, menus, and installer to Inkblots; retained the installer application ID and legacy layout markers for continuity.
+- Added Shift + left-drag box selection and undoable movement of multiple selected nodes.
+- Added named, colored zones with resize handles, member-node dragging, membership controls, and rename/removal actions.
+- Added movable, resizable, colored sticky notes. Notes and zones save in compiler-safe Ink metadata, remain separate per tab, and participate in undo/redo.
+- Added top-right comment balloons on nodes, with divided hover/focus previews; divert pills also preview inline comments. Block-comment examples no longer create phantom graph nodes or diverts.
+- Added a searchable cursor Ink menu on Shift+A or right-clicking empty canvas, with keyboard navigation and node insertion at the cursor. Notes and zones are also available through this menu and Story.
+- Added a bottom-left minimap with viewport indication and pointer/keyboard navigation.
+
+Validation: all 12 unit tests passed. Hidden Electron canvas checks cover selection at two zoom levels, group movement/resizing, note editing/dragging, serialization/reopen, source edits, tab isolation, rename membership, undo/redo, comment dividers, searchable insertion, and minimap keyboard navigation. Both compiled output and the saved Ink file containing metadata compile successfully. Existing workspace/menu checks and inspector alignment checks at four zoom levels passed. Dark/light canvas screenshots were visually inspected.
+
+Build: Windows NSIS installer `Inkblots Setup 0.3.0.exe` generated successfully; packaged product name, version, and canvas module verified in app.asar. Installer installation was not tested.
+
 ## [0.2.0] - 2026-09-19
 
 - Integrate menus into the app header and restore the original spline routing

@@ -1,4 +1,4 @@
-/* Inkweave — node-based editing for Ink scripts.
+/* Inkblots — node-based editing for Ink scripts.
    The .ink file stays the source of truth: nodes are knots/stitches, edges are diverts. */
 
 (function () {
@@ -17,6 +17,7 @@ const LAYOUT_MARK = '// --- inkweave layout (safe to delete) ---';
 function makeTab(name) {
   return {
     nodes: {}, order: [], layout: {},
+    organizer: { zones: [], notes: [] }, selection: [],
     globals: new Set(), includes: [],
     filePath: null, fileName: name || 'Untitled.ink',
     dirty: false, sel: null,
@@ -83,14 +84,17 @@ const RE_DIVERT = /(->->|->|<-)[ \t]*([A-Za-z_][\w.]*)?/g;
 
 function stripLayout(src) {
   const layout = {};
+  let organizer = { zones: [], notes: [] };
   const kept = [];
   for (const line of src.split('\n')) {
+    const org = line.match(/^\s*\/\/\s*@inkblots\s+(\{.*\})\s*$/);
+    if (org) { try { organizer = JSON.parse(org[1]); } catch (e) {} continue; }
     const m = line.match(/^\s*\/\/\s*@layout\s+(\{.*\})\s*$/);
     if (m) { try { Object.assign(layout, JSON.parse(m[1])); } catch (e) {} continue; }
     if (line.trim() === LAYOUT_MARK) continue;
     kept.push(line);
   }
-  return { src: kept.join('\n'), layout };
+  return { src: kept.join('\n'), layout, organizer };
 }
 
 // root-level stitches are addressed by bare name; knot stitches are knot.stitch
@@ -99,15 +103,18 @@ function stitchId(parent, name) {
 }
 
 function parse(source) {
-  const { src, layout } = stripLayout(source);
+  const { src, layout, organizer } = stripLayout(source);
   const nodes = {}, order = [];
   let cur = { id: START_ID, name: 'Start', kind: 'start', header: null, parent: null, lines: [] };
   let curKnot = START_ID;
 
   const push = (n) => { n.body = n.lines.join('\n').replace(/\s+$/, ''); delete n.lines; nodes[n.id] = n; order.push(n.id); };
 
-  for (const line of src.split('\n')) {
-    let m = line.match(RE_KNOT);
+  const sourceLines = src.split('\n');
+  const structuralLines = src.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).split('\n');
+  for (let lineIndex = 0; lineIndex < sourceLines.length; lineIndex++) {
+    const line = sourceLines[lineIndex], structural = structuralLines[lineIndex];
+    let m = structural.match(RE_KNOT);
     if (m) {
       push(cur);
       const isFn = !!m[1];
@@ -115,7 +122,7 @@ function parse(source) {
       curKnot = cur.id;
       continue;
     }
-    m = line.match(RE_STITCH);
+    m = structural.match(RE_STITCH);
     if (m) {
       push(cur);
       cur = { id: stitchId(curKnot, m[1]), name: m[1], kind: 'stitch', args: m[2] || '', header: line.trimEnd(), parent: curKnot, lines: [] };
@@ -143,12 +150,12 @@ function parse(source) {
     n.body.split('\n').forEach(l => { const m = l.match(RE_LABEL); if (m) n.labels.push(m[1]); });
     scanDiverts(n);
   }
-  return { nodes, order, layout, globals, includes };
+  return { nodes, order, layout, globals, includes, organizer };
 }
 
 function scanDiverts(node) {
   node.diverts = [];
-  const lines = node.body.split('\n');
+  const lines = node.body.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).split('\n');
   lines.forEach((line, i) => {
     const cut = line.indexOf('//');
     const scan = cut >= 0 ? line.slice(0, cut) : line;
@@ -235,6 +242,7 @@ function serialize(withLayout, s) {
     const lay = {};
     for (const id of s.order) if (s.layout[id]) lay[id] = s.layout[id].map(Math.round);
     text += '\n' + LAYOUT_MARK + '\n// @layout ' + JSON.stringify(lay) + '\n';
+    text += '// @inkblots ' + JSON.stringify(s.organizer) + '\n';
   }
   return { text, lineMap };
 }
@@ -246,7 +254,9 @@ function load(source, opts) {
   const parsed = parse(source);
   State.nodes = parsed.nodes;
   State.order = parsed.order;
-  State.layout = Object.assign({}, parsed.layout);
+  State.layout = Object.assign({}, opts.keepOrganizer ? State.layout : {}, parsed.layout);
+  State.organizer = opts.keepOrganizer ? State.organizer : parsed.organizer;
+  State.selection = [];
   State.globals = parsed.globals;
   State.includes = parsed.includes;
   State.sel = null;
@@ -413,7 +423,7 @@ const nodesEl = $('#nodes'), egroup = $('#egroup'), canvas = $('#canvas');
 // same thing twice, once as a readable tag and once as leftover syntax.
 function previewOf(n) {
   const out = [];
-  for (const raw of n.body.split('\n')) {
+  for (const raw of n.body.replace(/\/\*[\s\S]*?\*\//g, '').split('\n')) {
     let l = raw.replace(/\/\/.*$/, '').trim();
     if (!l || /^~/.test(l)) continue;                              // logic lines
     if (/^(VAR|CONST|LIST|EXTERNAL|INCLUDE)\b/.test(l)) continue;   // declarations — shown as their own tag instead
@@ -464,7 +474,7 @@ function render() {
     d.dataset.kind = n.kind;
     d.style.left = pos[0] + 'px';
     d.style.top = pos[1] + 'px';
-    if (State.sel === id) d.classList.add('sel');
+    if (State.sel === id || State.selection.includes(id)) d.classList.add('sel');
 
     const head = el('div', 'head');
     head.appendChild(el('span', 'kind'));
@@ -511,6 +521,7 @@ function render() {
   requestAnimationFrame(drawEdges);
   updateStatus();
   applyFilter();
+  window.dispatchEvent(new Event('inkblots-render'));
 }
 
 function anchorFor(nodeId, idx) {
@@ -563,6 +574,7 @@ function drawEdges() {
 function applyTransform() {
   const v = State.view;
   $('#world').style.transform = `translate(${v.x}px, ${v.y}px) scale(${v.k})`;
+  window.dispatchEvent(new Event('inkblots-view'));
 }
 
 function updateStatus() {
@@ -570,11 +582,11 @@ function updateStatus() {
   $('#app').classList.toggle('empty', empty);
   $('#empty-workspace').hidden = !empty;
   for (const id of ['b-save', 'b-ink', 'b-addknot', 'b-layout', 'b-source', 'b-play', 'search', 'b-zoomout', 'b-zoomfit', 'b-zoomin']) $('#' + id).disabled = empty;
-  $('#st-hint').textContent = empty ? '' : 'Drag a pill onto another knot to redirect it';
+  $('#st-hint').textContent = empty ? '' : 'Shift+drag to select · Shift+A / right-click to insert';
   if (empty) {
     $('#st-counts').textContent = ''; $('#st-words').textContent = '';
     $('#st-state').textContent = 'No file open'; $('#st-dot').className = 'dot';
-    $('#filename').textContent = ''; document.title = 'Inkweave';
+    $('#filename').textContent = ''; document.title = 'Inkblots';
     renderTabBar();
     if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(false, '');
     return;
@@ -589,7 +601,7 @@ function updateStatus() {
   dot.className = 'dot' + (broken ? ' err' : ' ok');
   $('#st-state').textContent = broken ? `${broken} unresolved divert${broken > 1 ? 's' : ''}` : (State.dirty ? 'Unsaved changes' : 'Saved');
   $('#filename').innerHTML = '<b>' + esc(State.fileName) + '</b>' + (State.dirty ? ' •' : '');
-  document.title = (State.dirty ? '\u2022 ' : '') + State.fileName + ' — Inkweave';
+  document.title = (State.dirty ? '\u2022 ' : '') + State.fileName + ' — Inkblots';
   renderTabBar();
   if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(State.dirty, State.fileName);
 }
@@ -800,6 +812,7 @@ function renameNode(id, newName) {
   const newId = n.kind === 'stitch' ? stitchId(n.parent, clean) : clean;
   if (State.nodes[newId]) { toast('That name is taken'); renderInspector(); return; }
   pushHistory();
+  const renamed = { [id]: newId };
 
   // rewrite every divert that resolved to this node
   for (const oid of State.order) {
@@ -833,6 +846,7 @@ function renameNode(id, newName) {
       const s = State.nodes[sid];
       if (s.parent === id) {
         const nsid = stitchId(newId, s.name);
+        renamed[sid] = nsid;
         s.parent = newId; s.id = nsid;
         delete State.nodes[sid]; State.nodes[nsid] = s;
         State.layout[nsid] = State.layout[sid]; delete State.layout[sid];
@@ -841,6 +855,8 @@ function renameNode(id, newName) {
     }
   }
   State.sel = newId;
+  State.selection = State.selection.map(x => renamed[x] || x);
+  for (const zone of State.organizer?.zones || []) zone.members = zone.members.map(x => renamed[x] || x);
   buildEdges(); render(); renderInspector(); setDirty(true);
 }
 
@@ -916,6 +932,11 @@ function bbox() {
     x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]);
     x1 = Math.max(x1, p[0] + d.offsetWidth); y1 = Math.max(y1, p[1] + d.offsetHeight);
   });
+  for (const item of [...(State.organizer?.zones || []), ...(State.organizer?.notes || [])]) {
+    if (![item.x,item.y,item.w,item.h].every(Number.isFinite)) continue;
+    x0 = Math.min(x0,item.x); y0 = Math.min(y0,item.y);
+    x1 = Math.max(x1,item.x+item.w); y1 = Math.max(y1,item.y+item.h);
+  }
   if (x0 === Infinity) return null;
   return { x0, y0, x1, y1 };
 }
@@ -952,14 +973,18 @@ function screenToWorld(sx, sy) {
 
 function select(id) {
   State.sel = id;
-  nodesEl.querySelectorAll('.node').forEach(d => d.classList.toggle('sel', d.dataset.id === id));
+  if (!State.selection.includes(id)) State.selection = id ? [id] : [];
+  nodesEl.querySelectorAll('.node').forEach(d => d.classList.toggle('sel', State.selection.includes(d.dataset.id)));
   renderInspector();
+  window.dispatchEvent(new Event('inkblots-selection'));
 }
 
 let drag = null, link = null, pan = null;
 
 canvas.addEventListener('mousedown', (ev) => {
   if (!Tabs.length) return;
+  if (ev.button !== 0 && ev.button !== 1) return;
+  if (ev.target.closest('.zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
   const pill = ev.target.closest('.pill');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
@@ -976,6 +1001,8 @@ canvas.addEventListener('mousedown', (ev) => {
       const p = State.layout[node.dataset.id] || [0, 0];
       const w = screenToWorld(ev.clientX, ev.clientY);
       drag = { id: node.dataset.id, dx: w[0] - p[0], dy: w[1] - p[1], moved: false };
+      drag.start = w;
+      drag.origins = State.selection.filter(id => State.layout[id]).map(id => [id, State.layout[id].slice()]);
       ev.preventDefault();
     }
     return;
@@ -990,12 +1017,15 @@ canvas.addEventListener('mousedown', (ev) => {
 window.addEventListener('mousemove', (ev) => {
   if (drag) {
     const w = screenToWorld(ev.clientX, ev.clientY);
-    State.layout[drag.id] = [Math.round(w[0] - drag.dx), Math.round(w[1] - drag.dy)];
-    const n = State.nodes[drag.id];
-    n._el.style.left = State.layout[drag.id][0] + 'px';
-    n._el.style.top = State.layout[drag.id][1] + 'px';
+    if (!drag.moved) pushHistory();
+    for (const [id, origin] of drag.origins) {
+      State.layout[id] = [Math.round(origin[0] + w[0] - drag.start[0]), Math.round(origin[1] + w[1] - drag.start[1])];
+      const node = State.nodes[id]._el;
+      if (node) { node.style.left = State.layout[id][0] + 'px'; node.style.top = State.layout[id][1] + 'px'; }
+    }
     drag.moved = true;
     drawEdges();
+    window.dispatchEvent(new Event('inkblots-view'));
   } else if (link) {
     const w = screenToWorld(ev.clientX, ev.clientY);
     link.path.setAttribute('d', path(link.a, w));
@@ -1060,6 +1090,7 @@ canvas.addEventListener('click', (ev) => {
 canvas.addEventListener('dblclick', (ev) => {
   if (!Tabs.length) return;
   if (ev.target.closest('.node')) { return; }
+  if (ev.target.closest('.zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
   const w = screenToWorld(ev.clientX, ev.clientY);
   ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', (name) => {
     if (name) addKnot(name, [Math.round(w[0]) - 120, Math.round(w[1]) - 40]);
@@ -1067,6 +1098,7 @@ canvas.addEventListener('dblclick', (ev) => {
 });
 
 canvas.addEventListener('wheel', (ev) => {
+  if (ev.target.closest('.sticky-note, #quick-ink')) return;
   ev.preventDefault();
   const r = canvas.getBoundingClientRect();
   const mx = ev.clientX - r.left, my = ev.clientY - r.top;
@@ -1103,7 +1135,7 @@ function confirmWindowClose() {
   flushPendingEdit();
   const dirtyTabs = Tabs.filter(t => t.dirty);
   if (!dirtyTabs.length) return Promise.resolve(true);
-  const title = dirtyTabs.length === 1 ? 'Close ' + dirtyTabs[0].fileName + '?' : 'Close Inkweave?';
+  const title = dirtyTabs.length === 1 ? 'Close ' + dirtyTabs[0].fileName + '?' : 'Close Inkblots?';
   const desc = dirtyTabs.length === 1
     ? 'This file has unsaved changes that will be lost.'
     : 'These ' + dirtyTabs.length + ' files have unsaved changes that will be lost: ' + dirtyTabs.map(t => t.fileName).join(', ');
@@ -1558,7 +1590,7 @@ $('#b-zoomout').onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeig
 $('#b-zoomfit').onclick = fitView;
 $('#b-source').onclick = () => $('#source-view').classList.contains('open') ? closeSource() : openSource();
 $('#b-srcclose').onclick = closeSource;
-$('#b-srcapply').onclick = () => { pushHistory(); load($('#srctext').value, { keepView: true, keepHistory: true, dirty: true }); closeSource(); toast('Graph rebuilt'); };
+$('#b-srcapply').onclick = () => { pushHistory(); load($('#srctext').value, { keepView: true, keepHistory: true, keepOrganizer: true, dirty: true }); closeSource(); toast('Graph rebuilt'); };
 $('#search').addEventListener('input', e => { filterText = e.target.value; applyFilter(); });
 
 $('#b-theme').onclick = () => {
@@ -1742,12 +1774,13 @@ function loadInk() {
 }
 
 // exposed for scripting / debugging from the devtools console
-window.Inkweave = {
+window.Inkblots = {
   get State() { return State; },
   get Tabs() { return Tabs; },
   get activeTab() { return activeTab; },
   parse, serialize, load, compile, autoLayout, render,
   saveFile, undo, redo, cancelInkTooltip,
+  pushHistory, setDirty, select, ask, screenToWorld, applyTransform, drawEdges, applySnippet, addKnot, renameNode,
   addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
 };
 

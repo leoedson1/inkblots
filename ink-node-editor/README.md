@@ -1,4 +1,20 @@
-# Inkweave
+# Inkblots
+
+## Canvas tools
+
+- **Shift + left-drag** draws a selection box. Drag one selected node to move the selection; use **Group into zone** to enclose it in a named zone.
+- **Story → New zone / group** creates a zone. Drag its header to move its member nodes, drag the bottom-right corner to resize, and double-click its title to rename. The plus/minus buttons add/remove selected nodes. Removing a zone keeps its nodes.
+- **Story → Sticky note** adds an editable note. Drag its header, resize its corner, or cycle its color with the dot button.
+- Hover or focus a node's **comment balloon** to see its line/block comments, separated by dividers. Divert pills also show their inline comments on hover.
+- **Shift+A** (outside text inputs), or **right-click empty canvas**, opens a searchable Ink insertion menu at the cursor. Search names or descriptions; use arrow keys, Enter, and Escape. Notes and zones are available there too.
+- The **bottom-left minimap** shows nodes, zones, notes, and the viewport. Click/drag it to navigate, or focus it and use arrow keys.
+
+Zones and sticky notes are stored in a `// @inkblots` metadata comment in the
+saved `.ink` file alongside the existing layout metadata. They participate in
+document undo/redo and do not enter the playable story. Keep that metadata when
+editing files externally if you want to retain canvas organization. Existing
+Inkweave layout metadata remains compatible; the installer application identifier
+is retained for upgrade continuity.
 
 A desktop editor for [Ink](https://www.inklestudios.com/ink/) scripts that shows the story as a graph. Knots and stitches are nodes, diverts are the wires between them. Everything you do on the canvas edits plain `.ink` text, so files stay compatible with Inky, inklecate and every Ink runtime.
 
@@ -47,7 +63,7 @@ New knots and stitches are created with a `-> DONE` in them, because Ink treats 
 
 Because tabs exist now, `New` and `Open` no longer discard anything — they used to silently replace whatever was open, which is exactly the kind of thing this rewrite was worth doing to fix. Opening a file while looking at an untouched blank tab reuses that tab instead of leaving an orphan one behind, the same courtesy VS Code extends to an empty Untitled tab.
 
-In the desktop app, `Ctrl+W`/`Cmd+W` closes the current tab and `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle between tabs — these are wired through the native menu rather than the in-page keyboard handler, since Ctrl+W and Ctrl+Tab are ordinarily reserved by browser chrome, so they can't be relied on in the plain browser build; there, the tab bar itself is the way to switch and close. Double-clicking a second `.ink` file, or passing several as command-line arguments, opens them as tabs in the *same* window rather than starting a second copy of the app — Inkweave now enforces a single instance for exactly this reason.
+In the desktop app, `Ctrl+W`/`Cmd+W` closes the current tab and `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle between tabs — these are wired through the native menu rather than the in-page keyboard handler, since Ctrl+W and Ctrl+Tab are ordinarily reserved by browser chrome, so they can't be relied on in the plain browser build; there, the tab bar itself is the way to switch and close. Double-clicking a second `.ink` file, or passing several as command-line arguments, opens them as tabs in the *same* window rather than starting a second copy of the app — Inkblots now enforces a single instance for exactly this reason.
 
 **Play.** `Play` compiles with inkjs and runs the story in a drawer, exactly like Inky's preview. `Play from here` on any node jumps straight into that knot. Compile errors appear in a Problems panel; clicking one selects the node it came from. `INCLUDE`d files are resolved from disk relative to the open file.
 
@@ -66,9 +82,9 @@ The `.ink` file is the only source of truth — there is no side-car project for
 // @layout {"forest":[410,80],"cottage":[740,260]}
 ```
 
-Inky and inklecate ignore it. Delete it and Inkweave lays the graph out automatically.
+Inky and inklecate ignore it. Delete it and Inkblots lays the graph out automatically.
 
-Round-tripping was checked against the 198 test scripts in the inkjs repository: all 178 that compile produce byte-identical compiled JSON after being parsed into nodes and written back out. The one formatting change Inkweave makes is normalising to a single blank line between knots.
+Round-tripping was checked against the 198 test scripts in the inkjs repository: all 178 that compile produce byte-identical compiled JSON after being parsed into nodes and written back out. The one formatting change Inkblots makes is normalising to a single blank line between knots.
 
 Diverts to variables, parameters and knots inside `INCLUDE`d files are shown as plain pills rather than errors, since their targets can't be known from one file.
 
@@ -86,7 +102,7 @@ renderer/
 
 `renderer/index.html` also runs standalone in a browser; it falls back to file-picker open and download-to-save, and loads the compiler from a CDN.
 
-`window.Inkweave` exposes `{ State, Tabs, activeTab, parse, serialize, load, compile, addTab, switchTab, closeTab }` in the devtools console if you want to script it. `State` always points at whichever tab is currently active.
+`window.Inkblots` exposes `{ State, Tabs, activeTab, parse, serialize, load, compile, addTab, switchTab, closeTab }` in the devtools console if you want to script it. `State` always points at whichever tab is currently active.
 
 ## What this doesn't do (yet)
 

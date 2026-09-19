@@ -1,6 +1,6 @@
 (() => {
   const N = window.inkNative;
-  const A = window.Inkweave;
+  const A = window.Inkblots;
   const nav = document.querySelector('#app-menus');
   const $ = id => document.getElementById(id);
   let previousFocus = null;
@@ -13,7 +13,7 @@
       ['New file', () => A.newFile(), 'Ctrl+N'], ['Open…', () => click('b-open'), 'Ctrl+O'],
       ['Save', () => click('b-save'), 'Ctrl+S', true], ['Save as…', () => A.saveFile(true), 'Ctrl+Shift+S', true],
       ['Close tab', () => A.closeTab(A.activeTab), 'Ctrl+W', true],
-      ['Close Inkweave', closeWindow, 'Alt+F4'],
+      ['Close Inkblots', closeWindow, 'Alt+F4'],
     ]],
     ['Edit', [
       ['Undo', () => edit('undo'), 'Ctrl+Z', true], ['Redo', () => edit('redo'), 'Ctrl+Shift+Z', true],
@@ -30,6 +30,9 @@
       ['Reload', () => native('reload'), 'Ctrl+R'], ['Developer tools', () => native('devtools'), 'Ctrl+Shift+I'],
     ]],
     ['Story', [
+      ['Insert Ink at cursor…', () => { const r = document.querySelector('#canvas').getBoundingClientRect(); window.InkblotsCanvas.openQuick(r.left+r.width/2,r.top+r.height/2); }, 'Shift+A', true],
+      ['New zone / group…', () => window.InkblotsCanvas.addZone(), '', true],
+      ['Sticky note', () => window.InkblotsCanvas.addNote(), '', true],
       ['Add knot…', () => click('b-addknot'), '', true], ['Tidy layout', () => click('b-layout'), 'Ctrl+L', true],
       ['Full script', () => click('b-source'), 'Ctrl+E', true], ['Play', () => click('b-play'), 'Ctrl+Enter', true],
     ]],
