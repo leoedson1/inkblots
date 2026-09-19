@@ -2,6 +2,17 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
 const path = require('path');
 const fs = require('fs');
 
+const messages = require(path.join(__dirname, 'renderer', 'locales.js'));
+let uiLanguage = 'en';
+function nativeText(key, values = {}) {
+  return (messages[uiLanguage]?.[key] || key).replace(/\{(\w+)\}/g, (all, name) => values[name] ?? all);
+}
+const systemLanguages = () => app.getPreferredSystemLanguages?.() || [app.getLocale?.() || 'en'];
+ipcMain.on('system-languages', event => { event.returnValue = systemLanguages(); });
+ipcMain.on('ui-language', (event, language) => {
+  if (win && event.sender === win.webContents && ['en','ja','zh-CN','pt-BR'].includes(language)) uiLanguage = language;
+});
+
 let win = null;
 let pendingFiles = [];   // files that arrived (via argv or open-file) before the window had loaded
 
@@ -64,12 +75,12 @@ async function confirmAndClose() {
 
   const r = await dialog.showMessageBox(win, {
     type: 'warning',
-    buttons: ["Don't Save", 'Cancel'],
+    buttons: [nativeText("Don't Save"), nativeText('Cancel')],
     defaultId: 1,
     cancelId: 1,
-    title: 'Unsaved changes',
-    message: `You have unsaved changes in ${names.length} tab${names.length > 1 ? 's' : ''}.`,
-    detail: names.map(n => '• ' + n).join('\n') + '\n\nClosing now will lose these changes.',
+    title: nativeText('Unsaved changes'),
+    message: nativeText(names.length===1 ? 'You have unsaved changes in 1 tab.' : 'You have unsaved changes in {count} tabs.', {count:names.length}),
+    detail: names.map(n => '• ' + n).join('\n') + '\n\n' + nativeText('Closing now will lose these changes.'),
   });
   if (r.response === 0) { allowClose = true; win.close(); }
 }
@@ -136,7 +147,8 @@ function buildMenu() {
 // multi-select: selecting several files opens each in its own tab
 ipcMain.handle('open', async () => {
   const r = await dialog.showOpenDialog(win, {
-    filters: [{ name: 'Ink script', extensions: ['ink', 'txt'] }],
+    title: nativeText('Open'), buttonLabel: nativeText('Open'),
+    filters: [{ name: nativeText('Ink script'), extensions: ['ink', 'txt'] }],
     properties: ['openFile', 'multiSelections'],
   });
   if (r.canceled || !r.filePaths.length) return null;
@@ -145,8 +157,9 @@ ipcMain.handle('open', async () => {
 
 ipcMain.handle('saveDialog', async (_e, suggested) => {
   const r = await dialog.showSaveDialog(win, {
+    title: nativeText('Save as…'), buttonLabel: nativeText('Save'),
     defaultPath: suggested || 'story.ink',
-    filters: [{ name: 'Ink script', extensions: ['ink'] }],
+    filters: [{ name: nativeText('Ink script'), extensions: ['ink'] }],
   });
   return r.canceled ? null : r.filePath;
 });

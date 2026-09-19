@@ -8,13 +8,14 @@ const root = path.resolve(__dirname, '..');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 async function harness({ dirty = true, veto = true, themed = false } = {}) {
-  let win, resolveDialog, dialogs = 0;
+  let win, resolveDialog, dialogOptions, dialogs = 0;
   const ipcMain = new EventEmitter();
   ipcMain.handle = () => {};
   const app = new EventEmitter();
   app.requestSingleInstanceLock = () => true;
   app.whenReady = () => Promise.resolve();
   app.quit = () => {};
+  app.getPreferredSystemLanguages = () => ['ja-JP', 'en-US'];
   const renderer = { window: { Inkblots: {
     Tabs: [{ dirty: false, fileName: 'draft.ink' }],
     flushPendingEdit() { this.Tabs[0].dirty = dirty; },
@@ -32,7 +33,7 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
     const source = fs.readFileSync(path.join(root, 'renderer/app.js'), 'utf8');
     const start = source.indexOf('let modalCb = null;');
     const end = source.indexOf("$('#m-ok').onclick", start);
-    const context = vm.createContext({ $, setTimeout,
+    const context = vm.createContext({ $, setTimeout, uiText: (selector,text) => { $(selector).textContent=text; },
       Tabs: renderer.window.Inkblots.Tabs,
       flushPendingEdit: () => renderer.window.Inkblots.flushPendingEdit(),
     });
@@ -62,7 +63,7 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
   }
   const electron = { app, BrowserWindow, ipcMain, shell: {},
     Menu: { buildFromTemplate: x => x, setApplicationMenu() {} },
-    dialog: { showMessageBox() { dialogs++; return new Promise(r => { resolveDialog = r; }); } },
+    dialog: { showMessageBox(_win, options) { dialogOptions=options; dialogs++; return new Promise(r => { resolveDialog = r; }); } },
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'main.js'), 'utf8'), {
     require: name => name === 'electron' ? electron : name === './renderer/snippets.js' ? [] : require(name),
@@ -70,7 +71,7 @@ async function harness({ dirty = true, veto = true, themed = false } = {}) {
   });
   await tick();
   return { win, ipcMain, modal, tabs: renderer.window.Inkblots.Tabs,
-    get dialogs() { return dialogs; }, respond(response) { resolveDialog({ response }); } };
+    get dialogs() { return dialogs; }, get dialogOptions() { return dialogOptions; }, respond(response) { resolveDialog({ response }); } };
 }
 
 test('Themed close uses the existing modal, closes on Don’t Save and skips native dialog', async () => {
@@ -195,5 +196,18 @@ test('Sandboxed preload exposes native bridge and propagates INCLUDE read errors
   });
   assert.equal(bridge.readRelative(path.join(root, 'story.ink'), 'examples/lighthouse.ink'),
     fs.readFileSync(path.join(root, 'examples/lighthouse.ink'), 'utf8'));
+  assert.deepEqual(Array.from(bridge.getSystemLanguages()), ['ja-JP', 'en-US']);
   assert.throws(() => bridge.readRelative(path.join(root, 'story.ink'), 'missing.ink'), /ENOENT/);
+});
+
+test('Native fallback confirmation uses the selected language and validates the sender', async () => {
+  const h=await harness();
+  h.ipcMain.emit('ui-language',{sender:h.win.webContents},'pt-BR');
+  h.ipcMain.emit('ui-language',{sender:{}},'ja');
+  h.ipcMain.emit('ui-language',{sender:h.win.webContents},'invalid');
+  h.win.close();await tick();
+  assert.equal(h.dialogOptions.buttons[0],'Não salvar');
+  assert.equal(h.dialogOptions.title,'Alterações não salvas');
+  assert.match(h.dialogOptions.message,/1 aba/);
+  h.respond(1);await tick();assert.equal(h.win.closed,false);
 });

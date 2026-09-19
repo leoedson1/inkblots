@@ -9,6 +9,7 @@ if (!process.versions.electron) {
 const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('node:fs');
 app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkblots-workspace-test-')));
+require('electron').ipcMain.on('system-languages', e => { e.returnValue=['en-US']; });
 app.whenReady().then(async () => {
   const win = new BrowserWindow({ show: false, width: 1440, height: 1000, titleBarStyle: 'hidden',
     titleBarOverlay: {color:'#161a23',symbolColor:'#e3e7f0',height:48},
@@ -72,7 +73,7 @@ app.whenReady().then(async () => {
       const A = window.Inkblots;
       const check = (ok, msg) => { if (!ok) throw new Error(msg); };
       const tops = [...document.querySelectorAll('.menu-top')];
-      check(tops.map(x=>x.textContent).join(',') === 'File,Edit,View,Story,Ink,Window,Help', 'Menu ordering');
+      check(tops.map(x=>x.textContent).join(',') === 'File,Edit,View,Story,Ink,Window,Language,Help', 'Menu ordering');
       check(getComputedStyle(document.querySelector('#legacy-actions')).display === 'none', 'Duplicate toolbar commands visible');
       const top = name => tops.find(x=>x.textContent === name);
       top('File').focus();

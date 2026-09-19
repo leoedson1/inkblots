@@ -3,7 +3,7 @@
 ## Canvas tools
 
 - **Shift + left-drag** draws a selection box. Drag one selected node to move the selection; use **Group into zone** to enclose it in a named zone.
-- **Story → New zone / group** creates a zone. Drag its header to move its member nodes, drag the bottom-right corner to resize, and double-click its title to rename. The plus/minus buttons add/remove selected nodes. Removing a zone keeps its nodes.
+- **Story → Group selected nodes** or **Ctrl+G** creates a zone immediately. Drag its header to move its member nodes and double-click its title to rename. Populated zones fit their nodes automatically, expanding and contracting; only empty zones have a manual resize handle. The plus/minus buttons add/remove selected nodes. Removing a zone keeps its nodes.
 - **Story → Sticky note** adds an editable note. Drag its header, resize its corner, or cycle its color with the dot button.
 - Hover or focus a node's **comment balloon** to see its line/block comments, separated by dividers. Divert pills also show their inline comments on hover.
 - **Shift+A** (outside text inputs), or **right-click empty canvas**, opens a searchable Ink insertion menu at the cursor. Search names or descriptions; use arrow keys, Enter, and Escape. Notes and zones are available there too.
@@ -48,7 +48,7 @@ npm run dist
 
 The inspector on the right is a normal Ink text editor with syntax highlighting, filling the panel down to the row of buttons at the bottom; the graph updates as you type. Drag the thin strip at the panel's left edge to make it wider or narrower — the width is remembered across reloads and re-clamps automatically if the window gets too narrow for it. `Source` opens the whole script as one file if you'd rather work that way — edit there and apply, and the graph rebuilds.
 
-**The Ink menu.** The same idea as Inky's: a menu of common Ink structures, grouped as Basic structure, Choices, Variables, Inline logic, Multi-line logic, Comments, List handling, Useful functions, Useful systems and Full stories. It appears both in the native menu bar and as a button in the toolbar, and both are built from one catalogue in `renderer/snippets.js`, so adding an entry there adds it to both.
+**The Ink menu.** The same idea as Inky's: a menu of common Ink structures, grouped as Basic structure, Choices, Variables, Inline logic, Multi-line logic, Comments, List handling, Useful functions, Useful systems and Full stories. It appears in the integrated app menu and the searchable cursor menu, both built from `renderer/snippets.js`.
 
 Each entry knows where it belongs rather than dropping text wherever the cursor happens to be, and the label in the menu says which it is:
 
@@ -69,9 +69,9 @@ In the desktop app, `Ctrl+W`/`Cmd+W` closes the current tab and `Ctrl+Tab` / `Ct
 
 **Shortcuts.** `Cmd/Ctrl+S` save, `Cmd/Ctrl+O` open, `Cmd/Ctrl+N` new tab, `Cmd/Ctrl+W` close tab (desktop app only), `Ctrl+Tab` / `Ctrl+Shift+Tab` next/previous tab (desktop app only), `Cmd/Ctrl+F` find, `Cmd/Ctrl+Enter` play, `Cmd/Ctrl+Z` undo, `Delete` remove the selected node.
 
-**Closing.** With unsaved changes anywhere, closing the window (the OS close button, Cmd+Q, File > Quit) shows a native "you have unsaved changes in N tabs" dialog listing which ones, rather than saving silently or losing anything without warning. Choosing "Don't Save" closes for real; there's no "save all and quit" option yet — cancel, save the tabs you care about, then close again.
+**Closing.** With unsaved changes anywhere, closing the window (the OS close button or File → Close Inkblots) shows a themed unsaved-changes dialog listing which ones, rather than saving silently or losing anything without warning. Choosing "Don't Save" closes for real; there's no "save all and quit" option yet — cancel, save the tabs you care about, then close again.
 
-**The Ink menu.** The same idea as Inky's own Ink dropdown: a menu of common Ink structures and idioms, grouped the same way Inky groups them — Basic structure, Choices, Variables, Inline logic, Multi-line logic, Comments, List handling, Useful functions, Useful systems, Full stories. It's in the native menu bar and as an `Ink ▾` button in the toolbar, both built from the one catalogue in `renderer/snippets.js`. Hovering over an entry for half a second shows a tooltip by the cursor explaining what it does. Most entries insert Ink syntax at the cursor or into the story's globals; the ones under Useful systems (a hub with returning spokes, a conversation with topics, a stat check, a list-based inventory) instead create several already-wired knots on the canvas, since that's where a node editor actually earns its keep over plain text. Full stories open as a new tab rather than replacing what's open.
+**The Ink menu.** The same idea as Inky's own Ink dropdown: a menu of common Ink structures and idioms, grouped the same way Inky groups them — Basic structure, Choices, Variables, Inline logic, Multi-line logic, Comments, List handling, Useful functions, Useful systems, Full stories. It is in the integrated app menu and searchable cursor menu, both built from `renderer/snippets.js`. Hovering over an entry for half a second shows a tooltip by the cursor explaining what it does. Most entries insert Ink syntax at the cursor or into the story's globals; the ones under Useful systems (a hub with returning spokes, a conversation with topics, a stat check, a list-based inventory) instead create several already-wired knots on the canvas, since that's where a node editor actually earns its keep over plain text. Full stories open as a new tab rather than replacing what's open.
 
 ## How your file is treated
 
@@ -97,7 +97,7 @@ renderer/
   index.html       markup
   style.css        theme tokens, canvas, cards
   app.js           parser, graph model, canvas, tabs, inspector, compiler, player
-  snippets.js      the Ink menu catalogue, shared with the native menu bar
+  snippets.js      the Ink catalogue for the app and cursor menus
 ```
 
 `renderer/index.html` also runs standalone in a browser; it falls back to file-picker open and download-to-save, and loads the compiler from a CDN.
@@ -108,4 +108,24 @@ renderer/
 
 Sessions aren't restored across restarts in the desktop app — each launch starts with one tab, same as before tabs existed. (The browser build's autosave-to-localStorage does cover a page refresh, since that was already there for the single-document version and now just covers every open tab instead of one.) There's also no way to open a second, separate *window* — multiple files always share one window's tab bar. Both are reasonable follow-ups if you want them, just not things this pass added.
 
-Help → Inkblots user guide contains a quick editor reference. Ink → Full stories → The Lantern Archive demonstrates the language and canvas tools. Ctrl+G immediately groups selected nodes; double-click the zone title to rename. Zones expand to keep members inside, preserving manually added space.
+Help → Inkblots user guide contains a quick editor reference. Ink → Full stories → Full Feature Demo demonstrates the language and canvas tools. Ctrl+G immediately groups selected nodes; double-click the zone title to rename. Zones expand and contract to fit their member nodes.
+
+## Language and help
+
+The interface supports English, Japanese, Simplified Chinese and Brazilian Portuguese.
+On first launch, it follows the preferred system language reported by Electron's
+`app.getPreferredSystemLanguages()` (browser builds use `navigator.languages`).
+The **Language** menu can select a language explicitly or return to **System default**.
+The choice is saved locally and applies immediately without reloading or replacing
+open documents. Unsupported system languages fall back to English.
+
+Menus, controls, app dialogs, snippet labels/descriptions, tooltips, the user guide
+and **Help → Hotkeys guide** are translated. Ink keywords, example story prose,
+user-authored content and inkjs compiler diagnostics retain their original text.
+Native operating-system dialog controls follow the OS language; the app supplies
+translated titles, filter names and primary button labels.
+
+Localization uses explicit UI bindings in `renderer/i18n.js` and dictionaries in
+`renderer/locales.js`; it never translates the editor DOM indiscriminately.
+Run `npm run test:languages` for Electron language switching and content-preservation
+checks. The Full Feature Demo remains available under Ink → Full stories.

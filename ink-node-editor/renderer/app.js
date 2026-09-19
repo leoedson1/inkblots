@@ -7,6 +7,10 @@
 const NATIVE = window.inkNative || null;
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+const I = window.InkblotsI18n;
+const t = (key, values) => I.t(key, values);
+const ui = (tag, cls, text, values) => I.bind(el(tag, cls), text, undefined, values);
+const uiText = (selector, text) => I.bind($(selector), text);
 const esc = (s) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
 const START_ID = '::start';
@@ -409,14 +413,14 @@ function renderTabBar() {
     tab.title = t.filePath || t.fileName;
     tab.appendChild(el('span', 'tab-name', t.fileName + (t.dirty ? ' \u2022' : '')));
     const x = el('span', 'tab-close', '\u2715');
-    x.title = 'Close';
+    I.bind(x, 'Close', 'title');
     x.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); closeTab(i); });
     tab.appendChild(x);
     tab.addEventListener('mousedown', (e) => { if (e.target === x) return; switchTab(i); });
     bar.appendChild(tab);
   });
   const add = el('div', 'tab-add', '+');
-  add.title = 'New tab (Ctrl+N)';
+  I.bind(add, 'New tab (Ctrl+N)', 'title');
   add.addEventListener('mousedown', (e) => { e.preventDefault(); newFile(); });
   bar.appendChild(add);
 }
@@ -499,7 +503,7 @@ function render() {
 
     const prose = el('div', 'prose');
     const lines = previewOf(n);
-    if (!lines.length) prose.appendChild(el('div', 'empty', 'no text yet'));
+    if (!lines.length) prose.appendChild(ui('div', 'empty', 'no text yet'));
     else lines.forEach(l => prose.appendChild(el('div', null, l)));
     d.appendChild(prose);
 
@@ -513,14 +517,14 @@ function render() {
       else label = (PILL_GLYPH[o.kind] || '→') + ' ' + o.raw;
       const p = el('div', cls, label);
       p.dataset.node = id; p.dataset.idx = o.idx;
-      p.title = o.res ? '' : o.soft ? 'Target comes from a ' + o.soft : 'No knot, stitch or label called ' + o.raw + ' — click to create it';
+      I.bind(p, o.res ? '' : o.soft ? 'Target comes from a ' + o.soft : 'No knot, stitch or label called ' + o.raw + ' — click to create it', 'title');
       pills.appendChild(p);
     });
     if ((n.out || []).length > 9) pills.appendChild(el('div', 'pill', '+' + (n.out.length - 9)));
     d.appendChild(pills);
 
     const add = el('div', 'addout', '+');
-    add.title = 'Drag to another knot to add a divert';
+    I.bind(add, 'Drag to another knot to add a divert', 'title');
     d.appendChild(add);
 
     nodesEl.appendChild(d);
@@ -590,10 +594,10 @@ function updateStatus() {
   $('#app').classList.toggle('empty', empty);
   $('#empty-workspace').hidden = !empty;
   for (const id of ['b-save', 'b-ink', 'b-addknot', 'b-layout', 'b-source', 'b-play', 'search', 'b-zoomout', 'b-zoomfit', 'b-zoomin']) $('#' + id).disabled = empty;
-  $('#st-hint').textContent = empty ? '' : 'Shift+drag to select · Shift+A / right-click to insert';
+  uiText('#st-hint', empty ? '' : 'Shift+drag to select · Shift+A / right-click to insert');
   if (empty) {
-    $('#st-counts').textContent = ''; $('#st-words').textContent = '';
-    $('#st-state').textContent = 'No file open'; $('#st-dot').className = 'dot';
+    uiText('#st-counts', ''); uiText('#st-words', '');
+    uiText('#st-state', 'No file open'); $('#st-dot').className = 'dot';
     $('#filename').textContent = ''; document.title = 'Inkblots';
     renderTabBar();
     if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(false, '');
@@ -603,11 +607,11 @@ function updateStatus() {
   const stitches = State.order.filter(id => State.nodes[id].kind === 'stitch').length;
   const words = State.order.reduce((a, id) => a + (State.nodes[id].body.match(/[A-Za-z']+/g) || []).length, 0);
   const broken = State.order.reduce((a, id) => a + (State.nodes[id].out || []).filter(o => !o.res && !o.soft && o.kind !== 'return').length, 0);
-  $('#st-counts').textContent = `${knots} knots · ${stitches} stitches`;
-  $('#st-words').textContent = `${words} words`;
+  uiText('#st-counts', `${knots} knots · ${stitches} stitches`);
+  uiText('#st-words', `${words} words`);
   const dot = $('#st-dot');
   dot.className = 'dot' + (broken ? ' err' : ' ok');
-  $('#st-state').textContent = broken ? `${broken} unresolved divert${broken > 1 ? 's' : ''}` : (State.dirty ? 'Unsaved changes' : 'Saved');
+  uiText('#st-state', broken ? (broken === 1 ? '1 unresolved divert' : `${broken} unresolved diverts`) : (State.dirty ? 'Unsaved changes' : 'Saved'));
   $('#filename').innerHTML = '<b>' + esc(State.fileName) + '</b>' + (State.dirty ? ' •' : '');
   document.title = (State.dirty ? '\u2022 ' : '') + State.fileName + ' — Inkblots';
   renderTabBar();
@@ -653,7 +657,7 @@ function renderInspector() {
   box.textContent = '';
   const n = State.nodes[State.sel];
   if (!n) {
-    box.innerHTML = '<div class="side-empty">Select a knot to edit its text, or double-click the canvas to make a new one.</div>';
+    box.appendChild(ui('div', 'side-empty', 'Select a knot to edit its text, or double-click the canvas to make a new one.'));
     return;
   }
 
@@ -664,16 +668,16 @@ function renderInspector() {
   name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); });
   name.addEventListener('change', () => renameNode(n.id, name.value.trim()));
   head.appendChild(name);
-  const playHere = el('button', 'btn', 'Play from here');
+  const playHere = ui('button', 'btn', 'Play from here');
   playHere.onclick = () => startPlay(n.id);
   head.appendChild(playHere);
   box.appendChild(head);
 
   const meta = el('div', 'side-meta');
-  meta.appendChild(el('span', null, n.kind + (n.parent ? ' in ' + n.parent : '')));
-  meta.appendChild(el('span', null, (n.out || []).length + ' outgoing'));
+  meta.appendChild(ui('span', null, n.parent ? '{knot} in {parent}' : n.kind, {knot:()=>t(n.kind),parent:n.parent}));
+  meta.appendChild(ui('span', null, (n.out || []).length + ' outgoing'));
   const inc = State.edges.filter(e => e.to === n.id && e.kind !== 'flow').length;
-  meta.appendChild(el('span', null, inc + ' incoming'));
+  meta.appendChild(ui('span', null, inc + ' incoming'));
   box.appendChild(meta);
 
   const wrap = el('div', 'editor-wrap');
@@ -708,7 +712,7 @@ function renderInspector() {
   box.appendChild(wrap);
 
   const acts = el('div', 'side-actions');
-  const mk = (label, fn) => { const b = el('button', 'btn', label); b.onclick = fn; acts.appendChild(b); };
+  const mk = (label, fn) => { const b = ui('button', 'btn', label); b.onclick = fn; acts.appendChild(b); };
   mk('Add stitch', () => addStitch(n.kind === 'stitch' ? n.parent : n.id));
   mk('Duplicate', () => duplicateNode(n.id));
   if (n.kind !== 'start') mk('Delete', () => deleteNode(n.id));
@@ -803,8 +807,8 @@ function deleteNode(id) {
   if (!n || n.kind === 'start') return;
   const kids = State.order.filter(x => State.nodes[x].parent === id);
   const refs = State.edges.filter(e => e.to === id && e.from !== id && e.kind !== 'flow').length;
-  const msg = refs ? `${refs} divert${refs > 1 ? 's point' : ' points'} here and will break.` : '';
-  ask('Delete ' + n.name + '?', msg + (kids.length ? ` Its ${kids.length} stitch(es) go too.` : ''), null, (ok) => {
+  const msg = refs ? t(refs === 1 ? '1 divert points here and will break.' : '{count} diverts point here and will break.', {count:refs}) : '';
+  ask('Delete ' + n.name + '?', msg + (kids.length ? t(' Its {count} stitches go too.', {count:kids.length}) : ''), null, (ok) => {
     if (!ok) return;
     pushHistory();
     [id].concat(kids).forEach(x => { delete State.nodes[x]; delete State.layout[x]; State.order.splice(State.order.indexOf(x), 1); });
@@ -1127,11 +1131,12 @@ function zoomAt(mx, my, factor) {
 
 let modalCb = null;
 function ask(title, desc, value, cb, confirmOnly, okLabel = 'OK') {
+  if (typeof document !== 'undefined') document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
   // Settle a replaced confirmation so its caller never waits indefinitely.
   if (modalCb) closeModal(false);
-  $('#m-ok').textContent = okLabel;
-  $('#m-title').textContent = title;
-  $('#m-desc').textContent = desc || '';
+  uiText('#m-ok', okLabel);
+  uiText('#m-title', title);
+  uiText('#m-desc', desc || '');
   const input = $('#m-input');
   input.style.display = confirmOnly ? 'none' : '';
   input.value = value || '';
@@ -1165,7 +1170,7 @@ $('#m-input').addEventListener('keydown', e => { if (e.key === 'Enter') closeMod
 let toastTimer;
 function toast(msg) {
   const t = $('#toast');
-  t.textContent = msg; t.classList.add('show');
+  I.bind(t, msg); t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
 }
@@ -1220,7 +1225,7 @@ async function saveFile(forceDialog) {
   } catch (e) {}
   if (window.showSaveFilePicker) {
     try {
-      const h = await window.showSaveFilePicker({ suggestedName: State.fileName, types: [{ description: 'Ink script', accept: { 'text/plain': ['.ink'] } }] });
+      const h = await window.showSaveFilePicker({ suggestedName: State.fileName, types: [{ description: t('Ink script'), accept: { 'text/plain': ['.ink'] } }] });
       const w = await h.createWritable(); await w.write(text); await w.close();
       State.fileName = h.name; setDirty(false); toast('Saved ' + h.name); return;
     } catch (e) { if (e.name === 'AbortError') return; }
@@ -1274,12 +1279,13 @@ function compile() {
 function renderProblems() {
   const box = $('#err-list');
   box.textContent = '';
-  if (!State.problems.length) { box.appendChild(el('div', 'side-empty', 'No problems. The script compiles.')); return; }
+  if (!State.problems.length) { box.appendChild(ui('div', 'side-empty', 'No problems. The script compiles.')); return; }
   State.problems.forEach(p => {
     const d = el('div', 'err' + (p.warn ? ' warn' : ''));
-    d.appendChild(el('div', null, p.msg.replace(/^(ERROR|WARNING|TODO):\s*/i, '')));
+    const message = p.msg.replace(/^(ERROR|WARNING|TODO):\s*/i, '');
+    d.appendChild(message === 'The Ink compiler did not load, so Play is unavailable.' ? ui('div', null, message) : el('div', null, message));
     if (p.nodeId) {
-      d.appendChild(el('div', 'where', 'in ' + p.nodeId));
+      d.appendChild(ui('div', 'where', 'in ' + p.nodeId));
       d.onclick = () => { select(p.nodeId); centerOn(p.nodeId); };
     }
     box.appendChild(d);
@@ -1296,7 +1302,7 @@ function startPlay(fromId) {
   story = r.story;
   $('#play').classList.add('open');
   $('#play-text').textContent = '';
-  $('#play-from').textContent = fromId && fromId !== START_ID ? 'from ' + fromId : '';
+  uiText('#play-from', fromId && fromId !== START_ID ? 'from ' + fromId : '');
   $('#play').dataset.from = fromId || '';
   if (fromId && fromId !== START_ID) {
     try { story.ChoosePathString(fromId); } catch (e) { toast('Cannot start at ' + fromId); }
@@ -1306,7 +1312,7 @@ function startPlay(fromId) {
 
 function step() {
   const out = $('#play-text'), ch = $('#play-choices'), endBox = $('#play-end');
-  ch.textContent = ''; endBox.textContent = '';
+  ch.textContent = ''; I.bind(endBox,'');
   try {
     while (story.canContinue) {
       const line = story.Continue();
@@ -1328,10 +1334,10 @@ function step() {
         ch.appendChild(b);
       });
     } else {
-      endBox.textContent = 'End of story.';
+      I.bind(endBox, 'End of story.');
     }
   } catch (e) {
-    endBox.textContent = 'Runtime error: ' + ((e && e.message) || e);
+    I.bind(endBox, 'Runtime error: ' + ((e && e.message) || e));
   }
   out.scrollTop = out.scrollHeight;
 }
@@ -1352,7 +1358,7 @@ function closeSource() {
 /* --------------------------------------------------- Ink menu & snippets */
 
 const SNIPPETS = window.INK_SNIPPETS || [];
-const KIND_HINT = { text: 'at cursor', globals: 'globals', nodes: 'new knots', stitch: 'new stitch', story: 'replaces file' };
+const KIND_HINT = { text: 'at cursor', globals: 'globals', nodes: 'new knots', stitch: 'new stitch', story: 'opens new tab' };
 
 function snippetById(id) {
   for (const g of SNIPPETS) for (const it of g.items) if (it.id === id) return it;
@@ -1365,13 +1371,13 @@ function buildInkMenu() {
   SNIPPETS.forEach((g) => {
     if (g.label === 'Full stories') root.appendChild(el('div', 'menu-sep'));
     const row = el('div', 'menu-row');
-    row.appendChild(el('span', null, g.label));
+    row.appendChild(ui('span', null, g.label));
     row.appendChild(el('span', 'arrow', '\u25B6'));
     const sub = el('div', 'submenu');
     g.items.forEach(it => {
       const r = el('div', 'menu-row');
-      r.appendChild(el('span', null, it.label));
-      if (KIND_HINT[it.kind]) r.appendChild(el('span', 'hint', KIND_HINT[it.kind]));
+      r.appendChild(ui('span', null, it.label));
+      if (KIND_HINT[it.kind]) r.appendChild(ui('span', 'hint', KIND_HINT[it.kind]));
       r.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); cancelInkTooltip(); closeInkMenu(); applySnippet(it); });
       r.addEventListener('mouseenter', (e) => scheduleInkTooltip(it, e.clientX, e.clientY));
       r.addEventListener('mousemove', (e) => { inkTipX = e.clientX; inkTipY = e.clientY; });
@@ -1410,7 +1416,7 @@ function cancelInkTooltip() {
 function showInkTooltip(text, x, y) {
   const tip = $('#ink-tooltip');
   if (!tip) return;
-  tip.textContent = text;
+  I.bind(tip, text);
   tip.style.left = '-9999px'; tip.style.top = '-9999px';
   tip.classList.add('show');
   const pad = 12, w = tip.offsetWidth, h = tip.offsetHeight;
@@ -1443,7 +1449,7 @@ function applySnippet(it) {
   if (it.kind === 'nodes') return insertNodes(it);
   if (it.kind === 'story') {
     addTab(it.text, { name: nextUntitledName() });
-    toast('Loaded ' + it.label.toLowerCase());
+    toast('Loaded ' + t(it.label));
     return;
   }
 }

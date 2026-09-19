@@ -12,38 +12,38 @@
   <div class="bar">
     <div class="brand">Ink<span>blots</span></div>
     <div id="legacy-actions" hidden>
-    <button class="btn" id="b-open">Open</button>
-    <button class="btn" id="b-save">Save</button>
-    <button class="btn" id="b-new">New tab</button>
-    <button class="btn" id="b-addknot">Add knot</button>
-    <button class="btn" id="b-layout">Tidy layout</button>
-    <button class="btn" id="b-source" aria-pressed="false">Source</button>
-    <button class="btn icon" id="b-theme" title="Switch theme">◐</button>
+    <button class="btn" id="b-open" data-i18n="Open">Open</button>
+    <button class="btn" id="b-save" data-i18n="Save">Save</button>
+    <button class="btn" id="b-new" data-i18n="New tab">New tab</button>
+    <button class="btn" id="b-addknot" data-i18n="Add knot">Add knot</button>
+    <button class="btn" id="b-layout" data-i18n="Tidy layout">Tidy layout</button>
+    <button class="btn" id="b-source" aria-pressed="false" data-i18n="Source">Source</button>
+    <button class="btn icon" id="b-theme" title="Switch theme" data-i18n-title="Switch theme">◐</button>
     </div>
-    <nav id="app-menus" role="menubar" aria-label="Application">
+    <nav id="app-menus" role="menubar" aria-label="Application" data-i18n-aria-label="Application">
       <div class="menu-anchor" id="ink-anchor">
         <button class="menu-top" id="b-ink" role="menuitem" aria-haspopup="true" aria-expanded="false">Ink</button>
         <div class="menu" id="inkmenu" role="menu"></div>
       </div>
     </nav>
-    <input id="search" type="search" placeholder="Find knot or text" spellcheck="false">
+    <input id="search" type="search" placeholder="Find knot or text" data-i18n-placeholder="Find knot or text" spellcheck="false">
     <div class="spacer"></div>
     <div class="title" id="filename"><b>Untitled.ink</b></div>
-    <button class="btn icon" id="b-zoomout" title="Zoom out">&minus;</button>
-    <button class="btn icon" id="b-zoomfit" title="Fit to window">Fit</button>
-    <button class="btn icon" id="b-zoomin" title="Zoom in">+</button>
-    <button class="btn primary" id="b-play">Play</button>
+    <button class="btn icon" id="b-zoomout" title="Zoom out" data-i18n-title="Zoom out">&minus;</button>
+    <button class="btn icon" id="b-zoomfit" title="Fit to window" data-i18n-title="Fit to window" data-i18n="Fit">Fit</button>
+    <button class="btn icon" id="b-zoomin" title="Zoom in" data-i18n-title="Zoom in">+</button>
+    <button class="btn primary" id="b-play" data-i18n="Play">Play</button>
   </div>
 
   <div class="tabbar" id="tabbar"></div>
 
   <div id="canvas">
     <div id="empty-workspace" hidden>
-      <h2>No file open</h2>
+      <h2 data-i18n="No file open">No file open</h2>
       <div class="empty-actions">
-        <button class="btn primary" id="empty-new">New file</button>
-        <button class="btn" id="empty-open">Open file…</button>
-        <button class="btn" id="empty-close">Close Inkblots</button>
+        <button class="btn primary" id="empty-new" data-i18n="New file">New file</button>
+        <button class="btn" id="empty-open" data-i18n="Open file…">Open file…</button>
+        <button class="btn" id="empty-close" data-i18n="Close Inkblots">Close Inkblots</button>
       </div>
     </div>
     <div id="world">
@@ -55,9 +55,9 @@
 
     <div class="drawer" id="play">
       <div class="dh">
-        <b>Play</b><span id="play-from"></span>
+        <b data-i18n="Play">Play</b><span id="play-from"></span>
         <div class="spacer"></div>
-        <button class="btn" id="b-restart">Restart</button>
+        <button class="btn" id="b-restart" data-i18n="Restart">Restart</button>
         <button class="btn icon" id="b-playclose">✕</button>
       </div>
       <div class="db" id="play-text"></div>
@@ -67,7 +67,7 @@
 
     <div class="drawer" id="errors">
       <div class="dh">
-        <b>Problems</b>
+        <b data-i18n="Problems">Problems</b>
         <div class="spacer"></div>
         <button class="btn icon" id="b-errclose">✕</button>
       </div>
@@ -76,10 +76,10 @@
 
     <div id="source-view">
       <div class="dh" style="padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
-        <b>Full script</b>
-        <span style="color:var(--fg-faint);font-size:12px">Edit here and apply to rebuild the graph.</span>
+        <b data-i18n="Full script">Full script</b>
+        <span style="color:var(--fg-faint);font-size:12px" data-i18n="Edit here and apply to rebuild the graph.">Edit here and apply to rebuild the graph.</span>
         <div class="spacer" style="flex:1"></div>
-        <button class="btn" id="b-srcapply">Apply changes</button>
+        <button class="btn" id="b-srcapply" data-i18n="Apply changes">Apply changes</button>
         <button class="btn icon" id="b-srcclose">✕</button>
       </div>
       <textarea id="srctext" spellcheck="false"></textarea>
@@ -87,9 +87,9 @@
   </div>
 
   <div id="side">
-    <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-label="Resize inspector panel" tabindex="0"></div>
+    <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-label="Resize inspector panel" data-i18n-aria-label="Resize inspector panel" tabindex="0"></div>
     <div id="side-body">
-      <div class="side-empty">Select a knot to edit its text, or double-click the canvas to make a new one.</div>
+      <div class="side-empty" data-i18n="Select a knot to edit its text, or double-click the canvas to make a new one.">Select a knot to edit its text, or double-click the canvas to make a new one.</div>
     </div>
   </div>
 
@@ -97,20 +97,20 @@
     <span id="st-counts">0 knots</span>
     <span id="st-words">0 words</span>
     <span class="spacer"></span>
-    <span id="st-hint">Drag a pill onto another knot to redirect it</span>
+    <span id="st-hint" data-i18n="Drag a pill onto another knot to redirect it">Drag a pill onto another knot to redirect it</span>
     <span class="dot" id="st-dot"></span>
-    <span id="st-state">Ready</span>
+    <span id="st-state" data-i18n="Ready">Ready</span>
   </div>
 </div>
 
 <div class="scrim" id="scrim">
   <div class="modal">
-    <h3 id="m-title">Name</h3>
+    <h3 id="m-title" data-i18n="Name">Name</h3>
     <p id="m-desc"></p>
     <input id="m-input" spellcheck="false" autocomplete="off">
     <div class="row">
-      <button class="btn" id="m-cancel">Cancel</button>
-      <button class="btn primary" id="m-ok">OK</button>
+      <button class="btn" id="m-cancel" data-i18n="Cancel">Cancel</button>
+      <button class="btn primary" id="m-ok" data-i18n="OK">OK</button>
     </div>
   </div>
 </div>
@@ -118,6 +118,8 @@
 <div class="toast" id="toast"></div>
 <div class="ink-tooltip" id="ink-tooltip"></div>
 
+<script src="locales.js"></script>
+<script src="i18n.js"></script>
 <script src="snippets.js"></script>
 <script src="app.js"></script>
 <script src="canvas-tools.js"></script>

@@ -1,6 +1,7 @@
 (() => {
   const N = window.inkNative;
   const A = window.Inkblots;
+  const I = window.InkblotsI18n;
   const nav = document.querySelector('#app-menus');
   const $ = id => document.getElementById(id);
   let previousFocus = null;
@@ -41,7 +42,8 @@
       ['Previous tab', () => A.switchTab((A.activeTab - 1 + A.Tabs.length) % A.Tabs.length), 'Ctrl+Shift+Tab', true],
       ['Minimize', () => native('minimize')], ['Maximize / restore', () => native('maximize')],
     ]],
-    ['Help', [['Inkblots user guide', () => window.showInkblotsGuide()], ['Ink writing guide', () => native('help')]]],
+    ['Language', [['System default', () => I.setLanguage('auto'), '', false, 'auto'], ['English', () => I.setLanguage('en'), '', false, 'en'], ['日本語', () => I.setLanguage('ja'), '', false, 'ja'], ['简体中文', () => I.setLanguage('zh-CN'), '', false, 'zh-CN'], ['Português (Brasil)', () => I.setLanguage('pt-BR'), '', false, 'pt-BR']]],
+    ['Help', [['Inkblots user guide', () => window.showInkblotsGuide()], ['Hotkeys guide', () => window.showInkblotsHotkeys()], ['Ink writing guide', () => native('help')]]],
   ];
   function edit(action) {
     if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) native(action);
@@ -73,13 +75,14 @@
   }, true);
   for (const [label, entries] of items) {
     const anchor = document.createElement('div'); anchor.className = 'menu-anchor';
-    const top = document.createElement('button'); top.className = 'menu-top'; top.textContent = label;
+    const top = document.createElement('button'); top.className = 'menu-top'; I.bind(top, label);
     top.setAttribute('role', 'menuitem'); top.setAttribute('aria-haspopup', 'true'); top.setAttribute('aria-expanded', 'false');
-    const menu = document.createElement('div'); menu.className = 'menu app-dropdown'; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', label);
-    entries.forEach(([name, action, shortcut, needsFile]) => {
+    const menu = document.createElement('div'); menu.className = 'menu app-dropdown'; menu.setAttribute('role', 'menu'); I.bind(menu, label, 'aria-label');menu.dataset.menu=label;
+    entries.forEach(([name, action, shortcut, needsFile, locale]) => {
       const row = document.createElement('button'); row.className = 'menu-row'; row.setAttribute('role', 'menuitem');
-      const text = document.createElement('span'); text.textContent = name; row.appendChild(text);
+      const text = document.createElement('span'); I.bind(text, name); row.appendChild(text);
       if (shortcut) { const hint = document.createElement('span'); hint.className = 'hint'; hint.textContent = N?.platform === 'darwin' ? shortcut.replace('Ctrl', 'Cmd') : shortcut; row.appendChild(hint); }
+      if (locale) { row.dataset.language=locale; const mark=document.createElement('span');mark.className='hint language-check';row.appendChild(mark); }
       if (needsFile) row.dataset.needsFile = 'true';
       row.onclick = () => { closeMenus(true); if (!needsFile || A.Tabs.length) action(); };
       menu.appendChild(row);
@@ -132,7 +135,7 @@
     }
   });
   window.addEventListener('keydown', e => {
-    if (document.querySelector('#user-guide[open]')) return;
+    if (document.querySelector('dialog[open]')) return;
     const mod = e.ctrlKey || e.metaKey, key = e.key.toLowerCase();
     if (e.key === 'F10' || (e.altKey && key === 'f')) {
       e.preventDefault(); previousFocus = document.activeElement; nav.querySelector('.menu-top').focus(); openMenu(nav.querySelector('.menu-top'), e.altKey); return;
@@ -153,6 +156,8 @@
     else if (mod && e.shiftKey && key === 'i') action = () => native('devtools');
     if (action) { e.preventDefault(); e.stopImmediatePropagation(); closeMenus(); action(); }
   }, true);
+  function syncLanguage(){nav.querySelectorAll('[data-language]').forEach(row=>{const selected=row.dataset.language===I.preference;row.querySelector('.language-check').textContent=selected?'✓':'';row.setAttribute('aria-current',String(selected));});}
+  window.addEventListener('inkblots-language',syncLanguage);syncLanguage();
   const syncTheme = () => N?.setTheme?.(document.documentElement.getAttribute('data-theme') || 'dark');
   new MutationObserver(syncTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
   syncTheme();

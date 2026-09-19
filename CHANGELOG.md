@@ -3,6 +3,20 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.5.0] - 2026-09-19
+
+- Fit zones to their nodes and add multilingual UI, hotkeys help, and Full Feature Demo naming
+
+- Populated zones now expand and contract to the exact member bounds with header/padding space. Moving nodes inward, removing members, undo/redo and rendered node-size changes keep the group fitted. Only empty zones retain manual resize handles.
+- Added Help → Hotkeys guide and renamed The Lantern Archive example to Full Feature Demo.
+- Added Japanese, Simplified Chinese and Brazilian Portuguese UI translations, including menus, controls, prompts, status messages, tooltips, the user guide, hotkeys guide and all Ink snippet labels/descriptions.
+- Detects the preferred OS language through Electron's system-language API. The Language menu provides a persistent manual override and System default option; changes apply without reloading open files. Unsupported languages fall back to English.
+- UI translation uses explicit bindings; Ink syntax, filenames, authored story text, comments, zones and notes are preserved. Native fallback confirmations follow the selected UI language, and close confirmations remain visible when a help dialog is open.
+
+Validation: 21 unit tests passed, including translation-key/interpolation coverage, snippet coverage, native fallback localization, close behavior and all showcase routes. All 62 hidden Electron canvas checks and 48 language checks passed, including contraction, member removal, undo, system detection, live switching, persistence, authored-content preservation and minimum-window layout. Workspace/menu checks and inspector alignment at four zoom levels passed. Japanese, Chinese and Portuguese help screenshots were visually inspected.
+
+Build: Windows NSIS installer `Inkblots Setup 0.5.0.exe` generated successfully. Packaged product/version and translation, guide, canvas, main-process and preload files verified against source in app.asar. Installer installation was not tested.
+
 ## [0.4.0] - 2026-09-19
 
 - Improve grouping and naming, add the Inkblots user guide and Lantern Archive showcase

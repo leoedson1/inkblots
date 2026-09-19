@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('inkNative', {
   setEdited: (edited, name) => ipcRenderer.send('edited', edited, name),
   onMenu: (cb) => ipcRenderer.on('menu', (_e, cmd, arg) => cb(cmd, arg)),
   platform: process.platform,
+  getSystemLanguages: () => ipcRenderer.sendSync('system-languages'),
+  setLanguage: language => ipcRenderer.send('ui-language', language),
   closeWindow: () => ipcRenderer.send('close-window'),
   windowAction: (action) => ipcRenderer.send('window-action', action),
   setTheme: (theme) => ipcRenderer.send('window-theme', theme),

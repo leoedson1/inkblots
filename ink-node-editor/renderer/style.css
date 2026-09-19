@@ -514,7 +514,10 @@ button { cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-#user-guide { width: min(760px, 88vw); max-height: 82vh; overflow: auto; padding: 24px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); line-height: 1.65; }
-#user-guide::backdrop { background: #0009; }
-#user-guide header { position: static; display: flex; justify-content: space-between; align-items: center; padding: 0; height: auto; background: none; -webkit-app-region: no-drag; }
-#user-guide h2 { margin: 0; } #user-guide h3 { margin-bottom: 4px; } #user-guide p { margin-top: 8px; }
+.help-guide { width: min(760px, 88vw); max-height: 82vh; overflow: auto; padding: 24px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); line-height: 1.65; }
+.help-guide::backdrop { background: #0009; }
+.help-guide header { position: static; display: flex; justify-content: space-between; align-items: center; padding: 0; height: auto; background: none; -webkit-app-region: no-drag; }
+.help-guide h2 { margin: 0; } .help-guide h3 { margin-bottom: 4px; } .help-guide p { margin-top: 8px; }
+
+.help-guide table {width:100%;border-collapse:collapse} .help-guide th,.help-guide td {text-align:left;padding:9px;border-bottom:1px solid var(--line)} .help-guide td:first-child {white-space:nowrap;font-family:var(--mono)}
+.bar .menu-top {white-space:nowrap} .bar #search {min-width:90px}

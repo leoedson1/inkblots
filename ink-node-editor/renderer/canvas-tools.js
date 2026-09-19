@@ -1,10 +1,12 @@
 /* Canvas-only organization. Metadata is stored in compiler-safe Ink comments. */
 (() => {
   'use strict';
+  const I = window.InkblotsI18n;
+  const ui = (tag, cls, text) => I.bind(make(tag,cls),text);
   const A = window.Inkblots, $ = s => document.querySelector(s);
   const canvas = $('#canvas'), zones = $('#zones'), notes = $('#notes');
   const make = (tag, cls, text) => { const e = document.createElement(tag); e.className = cls || ''; if (text != null) e.textContent = text; return e; };
-  const button = (text, title, fn) => { const e = make('button', 'btn', text); e.title = title; e.setAttribute('aria-label', title); e.onclick = fn; return e; };
+  const button = (text, title, fn) => { const e = ui('button', 'btn', text); I.bind(e,title,'title'); I.bind(e,title,'aria-label'); e.onclick = fn; return e; };
   const state = () => A.State;
   const world = e => A.screenToWorld(e.clientX, e.clientY);
   const center = () => { const r = canvas.getBoundingClientRect(); return A.screenToWorld(r.left + r.width / 2, r.top + r.height / 2); };
@@ -41,17 +43,15 @@
     if (!A.Tabs.length) return;
     const ids = state().selection.slice(), b = nodeBounds(ids);
     const names = new Set(data().zones.map(z => z.name));
-    let name = 'Zone', i = 2;
-    while (names.has(name)) name = 'Zone ' + i++;
+    let name = I.t('Zone'), i = 2;
+    while (names.has(name)) name = I.t('Zone {count}',{count:i++});
     mutate(() => data().zones.push({id:uid(),name,members:ids,x:b ? b.x-30 : point[0],y:b ? b.y-58 : point[1],w:b ? b.w+60 : 420,h:b ? b.h+88 : 280,color:'blue'}));
   }
-  // Preserve manually added space, expanding every edge as members move or grow.
+  // Nonempty zones follow their member bounds, with room for the header.
   function containMembers() {
     for (const z of data().zones) {
       const b = nodeBounds(z.members); if (!b) continue;
-      const right = Math.max(z.x+z.w,b.x+b.w+30), bottom = Math.max(z.y+z.h,b.y+b.h+30);
-      z.x = Math.min(z.x,b.x-30); z.y = Math.min(z.y,b.y-58);
-      z.w = right-z.x; z.h = bottom-z.y;
+      Object.assign(z, {x:b.x-30,y:b.y-58,w:b.w+60,h:b.h+88});
       const card = [...zones.children].find(el => el.dataset.id === z.id);
       if (card) position(card,z);
     }
@@ -76,7 +76,7 @@
     const ids = state().selection;
     $('#nodes').querySelectorAll('.node').forEach(n=>n.classList.toggle('sel', ids.includes(n.dataset.id)));
     actions.hidden = !A.Tabs.length || ids.length < 2;
-    count.textContent = ids.length + ' selected'; drawMap();
+    I.bind(count, ids.length + ' selected'); drawMap();
   }
   const marquee = make('div'); marquee.id = 'selection-box'; marquee.hidden = true; canvas.appendChild(marquee);
   canvas.addEventListener('mousedown', e => {
@@ -92,6 +92,7 @@
   }
   function startDrag(e, item, element, resize, type) {
     if (e.button !== 0 || e.target.closest('button,textarea,input')) return;
+    if (resize && type === 'zones' && item.members.length) {e.preventDefault();e.stopPropagation();return;}
     e.preventDefault(); e.stopPropagation(); A.flushPendingEdit();
     drag = {s:state(),item,element,resize,type,start:world(e),original:{...item},moved:false,
       members: type === 'zones' ? item.members.filter(id=>state().layout[id]).map(id=>[id,state().layout[id].slice()]) : []};
@@ -102,12 +103,12 @@
       if (type === 'zones') item.members = item.members.filter(id=>state().nodes[id]);
       const card = make('div', type === 'zones' ? 'zone' : 'sticky-note'); card.dataset.id = item.id; card.dataset.color = item.color; position(card,item);
       const head = make('div', 'organizer-head');
-      const title = make('span', 'organizer-title', type === 'zones' ? item.name : 'Note'); head.appendChild(title);
+      const title = type === 'zones' ? make('span', 'organizer-title', item.name) : ui('span','organizer-title','Note'); head.appendChild(title);
       if (type === 'zones') {
         head.appendChild(button('＋', 'Add selected nodes to this zone', () => mutate(() => { item.members = [...new Set([...item.members,...state().selection])]; })));
         head.appendChild(button('−', 'Remove selected nodes from this zone', () => mutate(() => { item.members = item.members.filter(id=>!state().selection.includes(id)); })));
-        title.title = 'Double-click to rename';
-        title.tabIndex=0; title.setAttribute('role','button'); title.setAttribute('aria-label','Rename zone '+item.name);
+        I.bind(title, 'Double-click to rename', 'title');
+        title.tabIndex=0; title.setAttribute('role','button'); I.bind(title,'Rename zone '+item.name,'aria-label');
         const rename = () => A.ask('Rename zone','',item.name,name=>{if(name && data().zones.includes(item)) mutate(()=>{item.name=name;});});
         title.ondblclick = e => { e.stopPropagation(); rename(); };
         title.onkeydown = e => {if(e.key==='Enter'){e.preventDefault();rename();}};
@@ -116,15 +117,15 @@
       head.appendChild(button('×', type === 'zones' ? 'Remove zone (keep its nodes)' : 'Delete note', () => mutate(() => {data()[type]=data()[type].filter(x=>x!==item);})));
       head.onmousedown = e => startDrag(e,item,card,false,type); card.appendChild(head);
       if (type === 'notes') {
-        const text = make('textarea'); text.value = item.text; text.placeholder = 'Write a note…'; text.setAttribute('aria-label','Sticky note');
+        const text = make('textarea'); text.value = item.text; I.bind(text, 'Write a note…', 'placeholder'); I.bind(text,'Sticky note','aria-label');
         let recorded = false;
         text.onfocus = () => { recorded=false; };
         text.oninput = () => { if(!recorded){A.pushHistory();recorded=true;} item.text=text.value; A.setDirty(true); };
         card.appendChild(text);
       } else {
-        const label = make('span','zone-members',item.members.length+' nodes'); card.appendChild(label);
+        const label = ui('span','zone-members',item.members.length+' nodes'); card.appendChild(label);
       }
-      const handle = make('div','organizer-resize'); handle.title='Drag to resize'; handle.onmousedown=e=>startDrag(e,item,card,true,type); card.appendChild(handle);
+      const handle = make('div','organizer-resize'); I.bind(handle,type==='zones' && item.members.length ? 'Size follows member nodes' : 'Drag to resize','title'); handle.hidden=type==='zones' && item.members.length>0;handle.onmousedown=e=>startDrag(e,item,card,true,type); card.appendChild(handle);
       container.appendChild(card);
     }
   }
@@ -155,7 +156,7 @@
   let tipTimer;
   function hideComments(){clearTimeout(tipTimer);tip.hidden=true;}
   function showComments(list,target){
-    clearTimeout(tipTimer);tip.textContent='';tip.appendChild(make('div','comments-title','Comments ('+list.length+')'));
+    clearTimeout(tipTimer);tip.textContent='';tip.appendChild(ui('div','comments-title','Comments ('+list.length+')'));
     list.forEach((c,i)=>{if(i)tip.appendChild(document.createElement('hr'));tip.appendChild(make('p','',c.text));});
     tip.hidden=false;const r=target.getBoundingClientRect();tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,r.right+8))+'px';tip.style.top=Math.max(8,Math.min(innerHeight-tip.offsetHeight-8,r.top))+'px';
   }
@@ -164,14 +165,14 @@
     $('#nodes').querySelectorAll('.comment-badge').forEach(el=>el.remove());
     $('#nodes').querySelectorAll('.pill[data-idx]').forEach(el=>{el.onmouseenter=null;el.onmouseleave=null;});
     for(const id of state().order){const n=state().nodes[id];if(!n._el)continue;const list=comments(n.body);if(!list.length)continue;
-      const badge=button('▱',list.length+' comment'+(list.length===1?'':'s'),()=>showComments(list,badge));badge.removeAttribute('title');badge.className='comment-badge';badge.setAttribute('aria-describedby','comments-tooltip');
+      const badge=make('button','','▱');badge.onclick=()=>showComments(list,badge);I.bind(badge,list.length+' comments','aria-label');badge.className='comment-badge';badge.setAttribute('aria-describedby','comments-tooltip');
       badge.onmouseenter=badge.onfocus=()=>showComments(list,badge);badge.onmouseleave=badge.onblur=delayedHide;n._el.querySelector('.head').appendChild(badge);
       n._el.querySelectorAll('.pill[data-idx]').forEach(p=>{const line=n.diverts[Number(p.dataset.idx)]?.line;const inline=list.filter(c=>c.line===line);if(inline.length){p.onmouseenter=()=>showComments(inline,p);p.onmouseleave=delayedHide;}});
     }
   }
   // Searchable cursor menu, also exposes organization tools without extra toolbar clutter.
-  const popup=make('div');popup.id='quick-ink';popup.hidden=true;popup.setAttribute('role','dialog');popup.setAttribute('aria-label','Insert Ink or canvas item');
-  const search=make('input');search.type='search';search.placeholder='Search Ink, zones, notes…';search.setAttribute('aria-label','Search Ink options');
+  const popup=make('div');popup.id='quick-ink';popup.hidden=true;popup.setAttribute('role','dialog');I.bind(popup,'Insert Ink or canvas item','aria-label');
+  const search=make('input');search.type='search';I.bind(search,'Search Ink, zones, notes…','placeholder');I.bind(search,'Search Ink options','aria-label');
   const results=make('div','quick-results');results.id='quick-results';results.setAttribute('role','listbox');search.setAttribute('aria-controls',results.id);
   popup.append(search,results);document.body.appendChild(popup);
   const entries=(window.INK_SNIPPETS||[]).flatMap(g=>g.items.map(it=>({label:it.label,desc:it.desc||'',group:g.label,it})));
@@ -186,9 +187,9 @@
     const added=state().order.filter(id=>!before.has(id));
     if(state()===s && added.length){const first=s.layout[added[0]];const dx=popupPoint[0]-first[0],dy=popupPoint[1]-first[1];added.forEach(id=>{s.layout[id]=[s.layout[id][0]+dx,s.layout[id][1]+dy];});A.render();}
   }
-  function filter(){const terms=search.value.toLowerCase().trim().split(/\s+/);filtered=entries.filter(e=>terms.every(t=>(e.label+' '+e.desc+' '+(e.group||'')).toLowerCase().includes(t)));active=0;results.textContent='';
-    filtered.forEach((entry,i)=>{const row=make('div','quick-option');row.id='quick-option-'+i;row.setAttribute('role','option');row.append(make('strong','',entry.label),make('small','',entry.desc));row.onmousedown=e=>e.preventDefault();row.onmouseenter=()=>{active=i;markActive();};row.onclick=()=>insert(entry);results.appendChild(row);});
-    if(!filtered.length)results.appendChild(make('p','quick-empty','No matching options'));markActive();
+  function filter(){const terms=search.value.toLowerCase().trim().split(/\s+/);filtered=entries.filter(e=>terms.every(t=>(I.t(e.label)+' '+I.t(e.desc)+' '+I.t(e.group||'')+' '+e.label+' '+e.desc).toLowerCase().includes(t)));active=0;results.textContent='';
+    filtered.forEach((entry,i)=>{const row=make('div','quick-option');row.id='quick-option-'+i;row.setAttribute('role','option');row.append(ui('strong','',entry.label),ui('small','',entry.desc));row.onmousedown=e=>e.preventDefault();row.onmouseenter=()=>{active=i;markActive();};row.onclick=()=>insert(entry);results.appendChild(row);});
+    if(!filtered.length)results.appendChild(ui('p','quick-empty','No matching options'));markActive();
   }
   function openQuick(clientX,clientY){if(!A.Tabs.length)return;returnFocus=document.activeElement;A.flushPendingEdit();popupPoint=A.screenToWorld(clientX,clientY);popup.hidden=false;search.value='';filter();popup.style.left=Math.max(8,Math.min(clientX,innerWidth-popup.offsetWidth-8))+'px';popup.style.top=Math.max(8,Math.min(clientY,innerHeight-popup.offsetHeight-8))+'px';search.focus();}
   search.oninput=filter;
@@ -200,8 +201,8 @@
     if(e.key==='Escape'){hideComments();closeQuick();box=null;marquee.hidden=true;}
   });
   // Minimap includes nodes, zones, notes, and the current viewport.
-  const mini=make('div');mini.id='minimap';mini.tabIndex=0;mini.setAttribute('aria-label','Minimap. Click to navigate, or use arrow keys.');
-  mini.appendChild(make('span','minimap-title','Overview'));
+  const mini=make('div');mini.id='minimap';mini.tabIndex=0;I.bind(mini,'Minimap. Click to navigate, or use arrow keys.','aria-label');
+  mini.appendChild(ui('span','minimap-title','Overview'));
   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 200 120');mini.appendChild(svg);canvas.appendChild(mini);
   let map=null,miniDrag=false;
   function drawMap(){
@@ -222,9 +223,11 @@
   function render(){
     if(drag?.s!==state())drag=null;
     if(box?.s!==state()){box=null;marquee.hidden=true;}
-    closeQuick();hideComments();data();containMembers();renderItems('zones',zones);renderItems('notes',notes);attachComments();updateSelection();drawMap();
+    closeQuick();hideComments();data();renderItems('zones',zones);renderItems('notes',notes);attachComments();containMembers();updateSelection();drawMap();
   }
-  window.addEventListener('inkblots-render',render);
+  const nodeSizes = new ResizeObserver(()=>{containMembers();drawMap();});
+  window.addEventListener('inkblots-render',()=>{render();nodeSizes.disconnect();$('#nodes').querySelectorAll('.node').forEach(el=>nodeSizes.observe(el));});
+  $('#nodes').querySelectorAll('.node').forEach(el=>nodeSizes.observe(el));
   window.addEventListener('inkblots-view',()=>{hideComments();containMembers();drawMap();});
   window.addEventListener('inkblots-selection',updateSelection);
   window.addEventListener('resize',()=>{closeQuick();drawMap();});

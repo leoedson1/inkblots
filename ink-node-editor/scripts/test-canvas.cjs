@@ -6,6 +6,7 @@ if (!process.versions.electron) {
 }
 const {app,BrowserWindow} = require('electron'), fs=require('node:fs');
 app.setPath('userData',fs.mkdtempSync(path.join(require('node:os').tmpdir(),'inkblots-canvas-test-')));
+require('electron').ipcMain.on('system-languages', e => { e.returnValue=['en-US']; });
 app.whenReady().then(async()=>{
   const win=new BrowserWindow({show:false,width:1500,height:1050,titleBarStyle:'hidden',titleBarOverlay:{color:'#161a23',symbolColor:'#e3e7f0',height:48},webPreferences:{preload:path.join(__dirname,'../preload.js'),sandbox:true,contextIsolation:true,backgroundThrottling:false}});
   win.webContents.on('console-message',(_e,level,message)=>{if(level>=2)console.log(message);});
@@ -40,7 +41,7 @@ app.whenReady().then(async()=>{
       check(A.State.layout.arrival[0]===original[0]+30,'Zone drag moves its members');
       const handle=$('.zone .organizer-resize').getBoundingClientRect(),oldWidth=zone.w;
       mouse($('.zone .organizer-resize'),'mousedown',handle.left+4,handle.top+4);mouse(window,'mousemove',handle.left+64,handle.top+44);mouse(window,'mouseup',handle.left+64,handle.top+44);
-      check(zone.w===oldWidth+60,'Zone can be resized');
+      check(zone.w===oldWidth,'Nonempty zone size follows its members');
       const contains = () => A.State.organizer.zones.every(z => z.members.every(id => {
         const p=A.State.layout[id], el=A.State.nodes[id]._el;
         return z.x<=p[0]-30 && z.y<=p[1]-58 && z.x+z.w>=p[0]+el.offsetWidth+30 && z.y+z.h>=p[1]+el.offsetHeight+30;
@@ -50,8 +51,17 @@ app.whenReady().then(async()=>{
         mouse(A.State.nodes.arrival._el.querySelector('.nm'),'mousedown',r.left+30,r.top+15);
         mouse(window,'mousemove',r.left+30+dx,r.top+15+dy);mouse(window,'mouseup',r.left+30+dx,r.top+15+dy);
         check(contains(),'Zone contains member after move '+dx+','+dy);
+        const moved=A.State.organizer.zones[0], positions=moved.members.map(id=>({p:A.State.layout[id],el:A.State.nodes[id]._el}));
+        check(moved.w===Math.max(...positions.map(n=>n.p[0]+n.el.offsetWidth))-Math.min(...positions.map(n=>n.p[0]))+60 && moved.h===Math.max(...positions.map(n=>n.p[1]+n.el.offsetHeight))-Math.min(...positions.map(n=>n.p[1]))+88,'Zone fits tightly after move '+dx+','+dy);
         A.undo();check(contains(),'Zone and member undo together '+dx+','+dy);
       }
+      zone=A.State.organizer.zones[0];
+      const wide=zone.w;C.selectMany(['platform']);
+      let inward=A.State.nodes.platform._el.getBoundingClientRect();
+      mouse(A.State.nodes.platform._el.querySelector('.nm'),'mousedown',inward.left+30,inward.top+15);mouse(window,'mousemove',inward.left-90,inward.top+15);mouse(window,'mouseup',inward.left-90,inward.top+15);
+      check(A.State.organizer.zones[0].w<wide && contains(),'Moving a member inward contracts its zone');A.undo();
+      C.selectMany(['platform']);document.querySelector('.zone button[aria-label="Remove selected nodes from this zone"]').click();
+      check(A.State.organizer.zones[0].w===A.State.nodes.arrival._el.offsetWidth+60,'Removing a member contracts the zone');A.undo();
       zone=A.State.organizer.zones[0];
       C.addNote([820,140]);const note=$('.sticky-note textarea');note.value='Check the pacing.\\nKeep this scene quiet.';note.dispatchEvent(new Event('input',{bubbles:true}));
       check(A.State.organizer.notes[0].text.includes('Keep this scene'),'Sticky-note editing updates document state');
@@ -101,7 +111,6 @@ app.whenReady().then(async()=>{
       check(A.serialize(true).text.includes('// --- Inkblots layout'),'Saved metadata uses current name');
       const legacy=A.parse(A.serialize(true).text.replace('// --- Inkblots layout','// --- inkweave layout'));
       check(legacy.organizer.zones.length && !legacy.nodes['::start']?.body.includes('inkweave layout'),'Legacy layout remains readable');
-      const originalNames=A.Tabs.map(t=>t.fileName);
       A.Tabs.forEach((t,i)=>t.fileName='temporary-'+i+'.ink');
       A.newFile();check(A.State.fileName==='Untitled.ink','First available untitled name is reused');
       A.newFile();check(A.State.fileName==='Untitled-2.ink','Next available untitled name is allocated');
