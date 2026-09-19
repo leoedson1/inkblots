@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Inky Nodes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">✦</span><span>Inky Nodes</span><span class="beta">BETA</span></div>
+    <button class="project-switcher"><span class="file-dot"></span>Moonlit Garden <span class="chevron">⌄</span></button>
+    <div class="side-label">STORY STRUCTURE <button class="tiny-icon">＋</button></div>
+    <nav class="tree">
+      <button class="tree-item active"><span class="story-icon">◈</span>Moonlit Garden.ink<span class="unsaved">•</span></button>
+      <button class="tree-item indent"><span class="twisty">⌄</span><span class="node-mini">◇</span>Intro</button>
+      <button class="tree-item indent"><span class="twisty">⌄</span><span class="node-mini teal">◇</span>Garden Gate</button>
+      <button class="tree-item indent"><span class="twisty">⌄</span><span class="node-mini orange">◇</span>Meet the Moth</button>
+      <button class="tree-item indent muted"><span class="twisty">›</span><span class="node-mini">◇</span>Observatory</button>
+      <button class="tree-item indent muted"><span class="twisty">›</span><span class="node-mini">◇</span>The End</button>
+    </nav>
+    <div class="side-label recent-label">RECENT</div>
+    <nav class="tree recent"><button class="tree-item"><span class="doc-icon">≡</span>characters.ink</button><button class="tree-item"><span class="doc-icon">≡</span>notes.md</button></nav>
+    <div class="sidebar-bottom"><button class="bottom-action">⚙ <span>Preferences</span></button><button class="bottom-action">? <span>Help & shortcuts</span></button></div>
+  </aside>
+  <main class="workspace">
+    <header class="topbar"><div class="breadcrumbs"><span>Moonlit Garden.ink</span><span class="slash">/</span><strong>Story map</strong></div><div class="top-actions"><span class="saved"><span class="green-dot"></span>Saved just now</span><button class="icon-button">↶</button><button class="icon-button disabled">↷</button><button class="play-button" id="playBtn">▶ Play story</button><button class="avatar">L</button></div></header>
+    <div class="modebar"><div class="view-tabs"><button class="view-tab active" data-view="map">Story map</button><button class="view-tab" data-view="script">Script</button><button class="view-tab" data-view="preview">Preview</button></div><div class="mode-hint">⌘ K <span>Command palette</span></div></div>
+    <section class="content-grid">
+      <section class="canvas-panel"><div class="canvas-toolbar"><div class="tool-group"><button class="tool active">↖</button><button class="tool">✥</button><span class="tool-divider"></span><button class="tool" id="addNodeBtn">＋ Add node</button></div><div class="zoom-control"><button id="zoomOut">−</button><span id="zoomValue">100%</span><button id="zoomIn">＋</button><button class="fit-btn" id="fitBtn">⊙ Fit</button></div></div>
+        <div class="map-canvas" id="mapCanvas"><div class="grid-lines"></div>
+          <svg class="connections" viewBox="0 0 1100 680" preserveAspectRatio="none"><path d="M338 172 C390 172 392 290 445 290"/><path d="M645 290 C710 290 710 184 785 184"/><path d="M645 330 C718 330 700 490 785 490"/><circle cx="338" cy="172" r="4"/><circle cx="445" cy="290" r="4"/><circle cx="645" cy="290" r="4"/><circle cx="785" cy="184" r="4"/><circle cx="785" cy="490" r="4"/></svg>
+          <div class="node start-node" data-node="intro" style="left:7%;top:17%"><div class="node-head"><span class="node-type purple">START</span><span class="node-menu">•••</span></div><h3>Intro</h3><p>The garden is quiet tonight.</p><div class="node-foot"><span>1 choice</span><span class="port"></span></div></div>
+          <div class="node choice-node selected" data-node="gate" style="left:40%;top:35%"><div class="node-head"><span class="node-type teal">CHOICE</span><span class="node-menu">•••</span></div><h3>Garden Gate</h3><p>Choose how to enter the garden.</p><div class="choices"><span>○ Take the path</span><span>○ Knock on the gate</span></div><div class="node-foot"><span>2 choices</span><span class="port"></span></div></div>
+          <div class="node dialogue-node" data-node="moth" style="left:71%;top:19%"><div class="node-head"><span class="node-type orange">DIALOGUE</span><span class="node-menu">•••</span></div><h3>Meet the Moth</h3><p><strong>Moth:</strong> You found the light.</p><div class="node-foot"><span>Continue</span><span class="port"></span></div></div>
+          <div class="node end-node" data-node="observatory" style="left:71%;top:65%"><div class="node-head"><span class="node-type pink">KNOT</span><span class="node-menu">•••</span></div><h3>Observatory</h3><p>Stars, stories, and a secret.</p><div class="node-foot"><span>2.3 min read</span><span class="port"></span></div></div>
+          <button class="canvas-add" id="canvasAdd">＋</button><div class="canvas-help"><span>Drag to move</span><span>•</span><span>Scroll to zoom</span></div>
+        </div>
+      </section>
+      <section class="script-view" id="scriptView"><div class="script-toolbar"><div><span class="eyebrow">INK SOURCE</span><h2>Moonlit Garden.ink</h2></div><span class="script-status"><span class="green-dot"></span>Compiled</span></div><div class="script-editor"><div class="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16</div><textarea id="scriptInput" spellcheck="false"></textarea></div><div class="script-footer"><span>Ink syntax supported · Tab inserts 4 spaces</span><span>248 words</span></div></section><aside class="inspector"><div class="inspector-head"><div><span class="eyebrow">SELECTED NODE</span><h2 id="inspectorTitle">Garden Gate</h2></div><button class="more">•••</button></div><div class="inspector-tabs"><button class="inspector-tab active">Properties</button><button class="inspector-tab">Ink preview</button></div>
+        <div class="form-section"><label>Node type</label><button class="select-input"><span class="node-type teal">CHOICE</span><span>Choice hub</span><span>⌄</span></button></div><div class="form-section"><label>Title</label><input id="titleInput" value="Garden Gate"></div><div class="form-section"><label>Tags <span class="muted-text">Optional</span></label><div class="tag-input"><span class="tag">moonlit <b>×</b></span><span class="tag">entry <b>×</b></span><input placeholder="Add a tag..."></div></div>
+        <div class="form-section"><label>Choices <span class="count">2</span></label><div class="choice-row"><span class="drag">⋮⋮</span><span class="choice-bullet teal-bg"></span>Take the path<span class="row-more">•••</span></div><div class="choice-row"><span class="drag">⋮⋮</span><span class="choice-bullet orange-bg"></span>Knock on the gate<span class="row-more">•••</span></div><button class="add-choice">＋ Add choice</button></div><div class="form-section"><label>Notes <span class="muted-text">For your eyes only</span></label><textarea placeholder="Add a note..."></textarea></div><div class="inspector-footer"><button class="delete-btn">⌫ Delete node</button><span>⌘ ⌫</span></div>
+      </aside>
+    </section><div class="statusbar"><span><span class="green-dot"></span>Ink compiled successfully</span><span>4 knots · 3 choices · 248 words</span><span>Ln 18, Col 1</span></div>
+  </main>
+</div>
+<div class="toast" id="toast">Node added to story map</div><div class="play-overlay" id="playOverlay"><div class="play-card"><div class="play-top"><span class="eyebrow">MOONLIT GARDEN</span><button id="closePlay">×</button></div><div class="play-progress"><span></span></div><div class="story-copy"><p class="scene-label">GARDEN GATE</p><h1>The garden is quiet tonight.</h1><p>Moonlight pools beyond the iron gate. Somewhere in the dark, something waits.</p><button class="story-choice">Take the path <span>→</span></button><button class="story-choice">Knock on the gate <span>→</span></button></div></div></div>
+<script src="app.js"></script>
+</body></html>

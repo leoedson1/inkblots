@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inkweave</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="bar">
+    <div class="brand">Ink<span>weave</span></div>
+    <button class="btn" id="b-open">Open</button>
+    <button class="btn" id="b-save">Save</button>
+    <button class="btn" id="b-new">New tab</button>
+    <span style="width:8px"></span>
+    <div class="menu-anchor">
+      <button class="btn" id="b-ink" aria-haspopup="true" aria-expanded="false">Ink ▾</button>
+      <div class="menu" id="inkmenu" role="menu"></div>
+    </div>
+    <button class="btn" id="b-addknot">Add knot</button>
+    <button class="btn" id="b-layout">Tidy layout</button>
+    <button class="btn" id="b-source" aria-pressed="false">Source</button>
+    <input id="search" type="search" placeholder="Find knot or text" spellcheck="false">
+    <div class="spacer"></div>
+    <div class="title" id="filename"><b>Untitled.ink</b></div>
+    <button class="btn icon" id="b-zoomout" title="Zoom out">&minus;</button>
+    <button class="btn icon" id="b-zoomfit" title="Fit to window">Fit</button>
+    <button class="btn icon" id="b-zoomin" title="Zoom in">+</button>
+    <button class="btn icon" id="b-theme" title="Switch theme">◐</button>
+    <button class="btn primary" id="b-play">Play</button>
+  </div>
+
+  <div class="tabbar" id="tabbar"></div>
+
+  <div id="canvas">
+    <div id="world">
+      <svg id="edges"><g id="egroup" transform="translate(6000,6000)"></g></svg>
+      <div id="nodes"></div>
+    </div>
+
+    <div class="drawer" id="play">
+      <div class="dh">
+        <b>Play</b><span id="play-from"></span>
+        <div class="spacer"></div>
+        <button class="btn" id="b-restart">Restart</button>
+        <button class="btn icon" id="b-playclose">✕</button>
+      </div>
+      <div class="db" id="play-text"></div>
+      <div id="play-choices"></div>
+      <div class="play-end" id="play-end"></div>
+    </div>
+
+    <div class="drawer" id="errors">
+      <div class="dh">
+        <b>Problems</b>
+        <div class="spacer"></div>
+        <button class="btn icon" id="b-errclose">✕</button>
+      </div>
+      <div class="db" id="err-list"></div>
+    </div>
+
+    <div id="source-view">
+      <div class="dh" style="padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+        <b>Full script</b>
+        <span style="color:var(--fg-faint);font-size:12px">Edit here and apply to rebuild the graph.</span>
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn" id="b-srcapply">Apply changes</button>
+        <button class="btn icon" id="b-srcclose">✕</button>
+      </div>
+      <textarea id="srctext" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <div id="side">
+    <div class="side-resize" id="side-resize" role="separator" aria-orientation="vertical" aria-label="Resize inspector panel" tabindex="0"></div>
+    <div id="side-body">
+      <div class="side-empty">Select a knot to edit its text, or double-click the canvas to make a new one.</div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span id="st-counts">0 knots</span>
+    <span id="st-words">0 words</span>
+    <span class="spacer"></span>
+    <span id="st-hint">Drag a pill onto another knot to redirect it</span>
+    <span class="dot" id="st-dot"></span>
+    <span id="st-state">Ready</span>
+  </div>
+</div>
+
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <h3 id="m-title">Name</h3>
+    <p id="m-desc"></p>
+    <input id="m-input" spellcheck="false" autocomplete="off">
+    <div class="row">
+      <button class="btn" id="m-cancel">Cancel</button>
+      <button class="btn primary" id="m-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="ink-tooltip" id="ink-tooltip"></div>
+
+<script src="snippets.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
