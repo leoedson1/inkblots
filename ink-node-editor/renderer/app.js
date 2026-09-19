@@ -532,31 +532,14 @@ function inletFor(nodeId) {
   return [pos[0], pos[1] + Math.min(22, n._el.offsetHeight / 2)];
 }
 
-function path(a, b, bounds) {
-  const gap = b[0] - a[0];
-  if (gap >= 40 && !bounds?.self) {
-    const dx = Math.min(180, gap * 0.5);
-    return `M${a[0]},${a[1]} C${a[0] + dx},${a[1]} ${b[0] - dx},${b[1]} ${b[0]},${b[1]}`;
+function path(a, b) {
+  const dx = Math.max(60, Math.abs(b[0] - a[0]) * 0.5);
+  // loop back around when the target sits to the left
+  if (b[0] < a[0] + 40) {
+    const mid = (a[1] + b[1]) / 2 + 90;
+    return `M${a[0]},${a[1]} C${a[0] + 80},${a[1]} ${a[0] + 60},${mid} ${(a[0] + b[0]) / 2},${mid} C${b[0] - 70},${mid} ${b[0] - 80},${b[1]} ${b[0]},${b[1]}`;
   }
-  // Return links and self-links go outside both endpoint cards. Rounded
-  // corners preserve horizontal entry/exit without the old looping S-kinks.
-  const clearance = 32 + (bounds?.lane || 0) * 12;
-  const right = Math.max(a[0], bounds?.right ?? a[0]) + clearance;
-  const left = Math.min(b[0], bounds?.left ?? b[0]) - clearance;
-  const bottom = Math.max(a[1], b[1], bounds?.bottom ?? Math.max(a[1], b[1])) + clearance;
-  const points = [a, [right, a[1]], [right, bottom], [left, bottom], [left, b[1]], b];
-  let d = `M${a[0]},${a[1]}`;
-  for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1], cur = points[i], next = points[i + 1];
-    const incoming = Math.hypot(cur[0] - prev[0], cur[1] - prev[1]);
-    const outgoing = Math.hypot(next[0] - cur[0], next[1] - cur[1]);
-    const r = Math.min(16, incoming / 2, outgoing / 2);
-    if (!r) continue;
-    const before = cur.map((v, j) => v + (prev[j] - v) * r / incoming);
-    const after = cur.map((v, j) => v + (next[j] - v) * r / outgoing);
-    d += ` L${before} Q${cur} ${after}`;
-  }
-  return d + ` L${b}`;
+  return `M${a[0]},${a[1]} C${a[0] + dx},${a[1]} ${b[0] - dx},${b[1]} ${b[0]},${b[1]}`;
 }
 
 function drawEdges() {
@@ -565,14 +548,9 @@ function drawEdges() {
   for (const e of State.edges) {
     const a = anchorFor(e.from, e.idx), b = inletFor(e.to);
     if (!a || !b) continue;
-    const from = State.nodes[e.from], to = State.nodes[e.to];
-    const fp = State.layout[e.from], tp = State.layout[e.to];
-    const dstr = path(a, b, {
-      self: e.from === e.to, lane: Math.max(0, e.idx),
-      left: Math.min(fp[0], tp[0]),
-      right: Math.max(fp[0] + from._el.offsetWidth, tp[0] + to._el.offsetWidth),
-      bottom: Math.max(fp[1] + from._el.offsetHeight, tp[1] + to._el.offsetHeight),
-    });
+    const dstr = e.from === e.to
+      ? `M${a[0]},${a[1]} C${a[0] + 90},${a[1] - 40} ${b[0] - 90},${b[1] - 50} ${b[0]},${b[1]}`
+      : path(a, b);
     const p = document.createElementNS(ns, 'path');
     p.setAttribute('d', dstr);
     p.setAttribute('class', 'e-' + e.kind);
@@ -1358,6 +1336,8 @@ function buildInkMenu() {
       r.addEventListener('mouseenter', (e) => scheduleInkTooltip(it, e.clientX, e.clientY));
       r.addEventListener('mousemove', (e) => { inkTipX = e.clientX; inkTipY = e.clientY; });
       r.addEventListener('mouseleave', cancelInkTooltip);
+      r.addEventListener('focus', () => { const rect = r.getBoundingClientRect(); scheduleInkTooltip(it, rect.right, rect.top); });
+      r.addEventListener('blur', cancelInkTooltip);
       sub.appendChild(r);
     });
     row.appendChild(sub);
@@ -1767,6 +1747,7 @@ window.Inkweave = {
   get Tabs() { return Tabs; },
   get activeTab() { return activeTab; },
   parse, serialize, load, compile, autoLayout, render,
+  saveFile, undo, redo, cancelInkTooltip,
   addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
 };
 

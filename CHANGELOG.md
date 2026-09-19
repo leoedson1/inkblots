@@ -3,6 +3,19 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.2.0] - 2026-09-19
+
+- Integrate menus into the app header and restore the original spline routing
+
+- Replaced the separate native menu/title rows with an in-app File/Edit/View/Story/Ink/Window/Help header and native overlaid window controls. Blank header space drags the window.
+- Removed duplicate toolbar commands from view; kept search, graph zoom/fit, and Play directly accessible.
+- Preserved Ink descriptions on hover and keyboard focus. Added menu keyboard navigation, F10/Alt+F access, document shortcuts, and native edit/window actions with sender validation.
+- Restored the spline path and drawing functions exactly to v0.1.2, retaining the empty workspace and other fixes.
+
+Validation: all 12 unit tests passed. Hidden Electron checks passed for menu navigation, Ink tooltip handling (with simulated focus in the hidden window), Edit selection preservation, New/Close shortcuts, empty workspace, original cubic routing, 900px header layout, light theme, and inspector alignment at four zoom levels. Menu and light-theme screenshots were inspected. Native drag/resize and window buttons were not manually exercised.
+
+Build: Windows NSIS installer generated successfully; packaged version, custom menu script, and hidden title-bar configuration verified in app.asar. Installer installation was not tested.
+
 ## [0.1.3] - 2026-09-19
 
 - Keep an empty workspace after closing the last tab and improve connection routing

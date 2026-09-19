@@ -80,6 +80,22 @@ button { cursor: pointer; }
 }
 
 /* ---------- toolbar ---------- */
+.bar { -webkit-app-region: drag; min-height: 48px; }
+.bar button, .bar input, .bar nav, .bar .menu { -webkit-app-region: no-drag; }
+.native-header .bar { padding-right: 150px; }
+.mac-header .bar { padding-left: 82px; }
+#app-menus { display: flex; flex-shrink: 0; align-items: center; gap: 1px; }
+.menu-top { border: 0; background: transparent; padding: 8px 7px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+.menu-top:hover, .menu-top[aria-expanded="true"], .menu-row:focus-visible { background: var(--accent-soft); outline: none; }
+.menu-top:focus-visible { outline: 2px solid var(--accent); }
+.app-dropdown { min-width: 238px; }
+.app-dropdown button.menu-row { width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; }
+.app-dropdown button.menu-row:hover { background: var(--accent-soft); }
+.app-dropdown button:disabled { opacity: .4; cursor: default; }
+.app-dropdown .hint { margin-left: auto; padding-left: 16px; font-size: 11px; color: var(--fg-faint); }
+.bar #search { min-width: 80px; width: 140px; }
+.bar .brand { flex-shrink: 0; }
+@media (max-width: 1150px) { .bar #filename { display: none; } .bar { gap: 3px; } .menu-top { padding: 8px 5px; } }
 .bar {
   grid-area: bar;
   display: flex; align-items: center; gap: 6px;

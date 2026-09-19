@@ -156,6 +156,23 @@ test('Empty-workspace close request uses the normal window close flow', async ()
   await tick(); assert.equal(h.win.closed, true);
 });
 
+test('Integrated header retains native controls and restricts menu actions to its window', async () => {
+  const h = await harness();
+  assert.equal(h.win.options.titleBarStyle, 'hidden');
+  assert.equal(h.win.options.titleBarOverlay.height, 48);
+  let copies = 0;
+  h.win.webContents.copy = () => { copies++; };
+  h.ipcMain.emit('window-action', { sender: {} }, 'copy');
+  assert.equal(copies, 0);
+  h.ipcMain.emit('window-action', { sender: h.win.webContents }, 'copy');
+  assert.equal(copies, 1);
+  h.ipcMain.emit('window-action', { sender: h.win.webContents }, 'constructor');
+  let overlay;
+  h.win.setTitleBarOverlay = value => { overlay = value; };
+  h.ipcMain.emit('window-theme', { sender: h.win.webContents }, 'light');
+  assert.equal(overlay.color, '#f7f8fa');
+});
+
 test('Sandboxed preload exposes native bridge and propagates INCLUDE read errors', async () => {
   const h = await harness();
   assert.equal(h.win.options.webPreferences.sandbox, true);

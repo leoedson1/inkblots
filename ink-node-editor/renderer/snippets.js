@@ -1,5 +1,5 @@
 /* Inkweave snippet catalogue.
-   Shared by the Electron menu bar (required in main.js) and the in-app Ink menu.
+   Used by the in-app Ink menu, including hover and keyboard-focus descriptions.
 
    kind:
      text     insert into the selected node at the cursor;  $0 marks where the caret lands

@@ -10,14 +10,18 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('node:fs');
 app.setPath('userData', fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'inkweave-workspace-test-')));
 app.whenReady().then(async () => {
-  const win = new BrowserWindow({ show: false, width: 1440, height: 1000,
-    webPreferences: { preload: path.join(__dirname, '../preload.js'), contextIsolation: true, sandbox: true } });
+  const win = new BrowserWindow({ show: false, width: 1440, height: 1000, titleBarStyle: 'hidden',
+    titleBarOverlay: {color:'#161a23',symbolColor:'#e3e7f0',height:48},
+    webPreferences: { preload: path.join(__dirname, '../preload.js'), contextIsolation: true, sandbox: true, backgroundThrottling: false } });
   let closeRequests = 0;
+  const windowActions = [];
+  ipcMain.on('window-action', (event, action) => { if (event.sender === win.webContents) windowActions.push(action); });
   ipcMain.on('close-window', event => { if (event.sender === win.webContents) closeRequests++; });
   win.webContents.on('console-message', (_event, level, message) => { if (level >= 2) console.log(message); });
   const output = path.join(__dirname, '../dist/qa'); fs.mkdirSync(output, { recursive: true });
   try {
     await win.loadFile(path.join(__dirname, '../renderer/index.html'));
+    await win.webContents.insertCSS('* { transition: none !important; animation: none !important; }');
     await win.webContents.executeJavaScript(`(async () => {
       const A = window.Inkweave;
       const check = (ok, text) => { if (!ok) throw new Error(text); };
@@ -59,21 +63,57 @@ app.whenReady().then(async () => {
       for (const edge of edges) {
         const d = edge.getAttribute('d');
         if (/NaN|Infinity/.test(d) || edge.getTotalLength() <= 0) throw new Error('Invalid edge geometry');
-        const source = A.State.nodes[edge.dataset.from], target = A.State.nodes[edge.dataset.to];
-        const sourcePos = A.State.layout[source.id], targetPos = A.State.layout[target.id];
-        if (sourcePos[0] + source._el.offsetWidth > targetPos[0]) {
-          if (!d.includes(' Q')) throw new Error('Return links must use rounded external routing');
-          const sourceBox = {x:sourcePos[0],y:sourcePos[1],w:source._el.offsetWidth,h:source._el.offsetHeight};
-          const targetBox = {x:targetPos[0],y:targetPos[1],w:target._el.offsetWidth,h:target._el.offsetHeight};
-          for (let t = 1; t < 100; t++) {
-            const p = edge.getPointAtLength(edge.getTotalLength() * t / 100);
-            for (const b of [sourceBox,targetBox]) if (p.x > b.x+1 && p.x < b.x+b.w-1 && p.y > b.y+1 && p.y < b.y+b.h-1) throw new Error('Return link intersects an endpoint card');
-          }
-        }
+        if (!d.includes(' C')) throw new Error('Original cubic spline routing was not restored');
       }
     })()`);
+    await new Promise(resolve => setTimeout(resolve, 200));
     fs.writeFileSync(path.join(output, 'connection-routing.png'), (await win.webContents.capturePage()).toPNG());
-    console.log('Workspace checks passed: cancel/discard, zero tabs, New/Open, shortcuts, native close, and forward/backward/self routing.');
+    await win.webContents.executeJavaScript(`(async () => {
+      const A = window.Inkweave;
+      const check = (ok, msg) => { if (!ok) throw new Error(msg); };
+      const tops = [...document.querySelectorAll('.menu-top')];
+      check(tops.map(x=>x.textContent).join(',') === 'File,Edit,View,Story,Ink,Window,Help', 'Menu ordering');
+      check(getComputedStyle(document.querySelector('#legacy-actions')).display === 'none', 'Duplicate toolbar commands visible');
+      const top = name => tops.find(x=>x.textContent === name);
+      top('File').focus();
+      top('File').dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowDown',bubbles:true}));
+      check(document.activeElement.textContent.startsWith('New file'), 'Keyboard menu entry failed');
+      document.activeElement.click();
+      check(A.Tabs.length === 2, 'File > New failed');
+      window.dispatchEvent(new KeyboardEvent('keydown', {key:'w',ctrlKey:true,bubbles:true}));
+      check(A.Tabs.length === 1, 'Ctrl+W failed');
+      const ta = document.querySelector('#side textarea'); ta.focus(); ta.setSelectionRange(0,6);
+      top('Edit').dispatchEvent(new MouseEvent('mousedown', {bubbles:true,cancelable:true})); top('Edit').click();
+      [...top('Edit').nextElementSibling.querySelectorAll('button')].find(x=>x.textContent.startsWith('Copy')).click();
+      check(document.activeElement === ta && ta.selectionEnd === 6, 'Edit menu lost input selection');
+      top('Ink').focus(); top('Ink').dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowDown',bubbles:true}));
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight',bubbles:true}));
+      check(document.activeElement.parentElement.classList.contains('submenu'), 'Ink keyboard submenu failed');
+      // A hidden BrowserWindow updates activeElement but does not have OS focus.
+      document.activeElement.dispatchEvent(new FocusEvent('focus'));
+      await new Promise(r=>setTimeout(r,650));
+      check(document.querySelector('#ink-tooltip').classList.contains('show'), 'Ink keyboard tooltip missing: ' + document.activeElement.textContent + ' / ' + document.querySelector('#ink-tooltip').outerHTML);
+    })()`);
+    await new Promise(resolve => setTimeout(resolve, 150));
+    await win.webContents.capturePage();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    fs.writeFileSync(path.join(output, 'in-app-ink-menu.png'), (await win.webContents.capturePage()).toPNG());
+    if (!windowActions.includes('copy')) throw new Error('Edit command did not reach native bridge');
+    await win.webContents.executeJavaScript(`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape',bubbles:true}));`);
+    win.setSize(900, 700);
+    await new Promise(resolve => setTimeout(resolve, 150));
+    await win.webContents.executeJavaScript(`(() => {
+      const play = document.querySelector('#b-play').getBoundingClientRect();
+      if (play.right > innerWidth - 145) throw new Error('Header overlaps window controls at minimum width');
+      document.querySelector('#b-theme').click();
+      if (document.documentElement.getAttribute('data-theme') !== 'light') throw new Error('Theme command failed');
+      if (document.querySelector('#ink-tooltip').classList.contains('show')) throw new Error('Tooltip remained after closing menu');
+    })()`);
+    await new Promise(resolve => setTimeout(resolve, 150));
+    await win.webContents.capturePage();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    fs.writeFileSync(path.join(output, 'header-small-light.png'), (await win.webContents.capturePage()).toPNG());
+    console.log('Workspace checks passed: cancel/discard, zero tabs, New/Open, shortcuts, native close, and restored cubic spline routing.');
     console.log('Screenshots: ' + output);
     app.exit(0);
   } catch (error) { console.error(error); app.exit(1); }

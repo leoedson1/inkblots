@@ -17,4 +17,6 @@ contextBridge.exposeInMainWorld('inkNative', {
   onMenu: (cb) => ipcRenderer.on('menu', (_e, cmd, arg) => cb(cmd, arg)),
   platform: process.platform,
   closeWindow: () => ipcRenderer.send('close-window'),
+  windowAction: (action) => ipcRenderer.send('window-action', action),
+  setTheme: (theme) => ipcRenderer.send('window-theme', theme),
 });
