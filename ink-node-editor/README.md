@@ -143,3 +143,15 @@ This is a display change: the original Ink source and story behavior are preserv
 The supplied Inkblots artwork is stored unchanged in `assets/icon.png` and used for
 the Electron window, executable/installer packaging and browser favicon.
 Run `npm run test:choices` for rendered rows, connector alignment and rewiring checks.
+
+## Node controls and syntax hints
+
+Hover a node and use its bottom **+** to insert a sticky choice. The new label is
+selected in the inspector for editing; drag its connector to set its destination.
+The side **+** adds a node-level divert beside the scene text. On choice nodes,
+this inserts a gather so the connection does not become part of the last choice.
+Both edits support undo.
+
+Pause over highlighted Ink syntax in the text inspector to see a short explanation
+near the cursor, in the selected interface language. Hints dismiss when you type,
+select text, scroll, or move away.

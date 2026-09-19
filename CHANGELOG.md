@@ -3,6 +3,18 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.7.0] - 2026-09-19
+
+- Add bottom choice controls and inspector syntax hints; fix node-level choice exits
+
+- New node-level exits from choice cards now sit beside the scene prose. Adding a side connection inserts a gather so it no longer belongs to the final choice.
+- Hovering a node reveals a bottom + button that inserts a sticky choice, selects its label in the inspector and supports undo. New choice terminal connectors can be dragged to set their destination.
+- Pausing over highlighted Ink syntax shows a localized description near the cursor. Hints cover choices, gathers, comments, declarations, logic, conditions, tags and diverts, and dismiss during editing, selection and scrolling.
+
+Validation: 26 unit tests, 42 Electron choice/tooltip checks, 62 canvas checks, 48 language checks, workspace/menu checks and inspector alignment at four zoom levels passed. New checks cover source compilation, connection ownership and position, choice insertion/undo, delayed hints, scroll/wrap hit testing and translated descriptions. Light and dark node screenshots were visually reviewed.
+
+Build: Windows NSIS installer `Inkblots Setup 0.7.0.exe` generated from a clean staging folder after malformed unrelated directory names prevented direct packaging. Packaged version, modified renderer files and unchanged icon verified against source in app.asar. Installer installation was not tested.
+
 ## [0.6.0] - 2026-09-19
 
 - Display choices as divided node rows with edge connectors and add the Inkblots app icon

@@ -539,7 +539,7 @@ function render() {
     }
     const pills = el('div', 'pills');
     const otherExits = (n.out || []).filter(o=>!choices.rowExits.has(o.idx));
-    otherExits.slice(0, 9).forEach((o) => {
+    (choices.rows.length ? otherExits : otherExits.slice(0,9)).forEach((o) => {
       let cls = 'pill ' + o.kind, label;
       if (o.kind === 'return') { cls = 'pill term'; label = '↩ return'; }
       else if (o.res && o.res.special) { cls = 'pill term'; label = '■ ' + o.res.special; }
@@ -551,14 +551,27 @@ function render() {
       I.bind(p, o.res ? '' : o.soft ? 'Target comes from a ' + o.soft : 'No knot, stitch or label called ' + o.raw + ' — click to create it', 'title');
       pills.appendChild(p);
     });
-    if (otherExits.length > 9) pills.appendChild(el('div', 'pill', '+' + (otherExits.length - 9)));
+    if (!choices.rows.length && otherExits.length > 9) pills.appendChild(el('div', 'pill', '+' + (otherExits.length - 9)));
     if(otherExits.length) d.appendChild(pills);
 
+    const addChoiceButton = ui('button','addchoice','+');
+    I.bind(addChoiceButton,'Add choice','title');I.bind(addChoiceButton,'Add choice','aria-label');
+    addChoiceButton.onclick=()=>addChoice(id);d.appendChild(addChoiceButton);
     const add = el('div', 'addout', '+');
     I.bind(add, 'Drag to another knot to add a divert', 'title');
     d.appendChild(add);
+    if(choices.rows.length) {
+      const bodyExit=el('div','body-exits');
+      const direct=[...pills.children];
+      direct.forEach(port=>{port.classList.add('body-port');port.setAttribute('aria-label',port.textContent);port.textContent='';bodyExit.appendChild(port);});
+      prose.appendChild(bodyExit);
+      if(!d.contains(prose))d.insertBefore(prose,head.nextSibling);
+      pills.remove();
+      prose.style.minHeight=Math.max(40,direct.length*18+12)+'px';
+    }
 
     nodesEl.appendChild(d);
+    if(choices.rows.length)add.style.top=(prose.offsetTop+prose.offsetHeight/2-9)+'px';
     n._el = d;
   }
   requestAnimationFrame(drawEdges);
@@ -580,6 +593,8 @@ function anchorFor(nodeId, idx) {
       return [pos[0]+w, pos[1]+(r.top-nodeRect.top+r.height/2)/scale];
     }
   }
+  const add=n._el.querySelector('.addout');
+  if(add){const r=add.getBoundingClientRect(),nr=n._el.getBoundingClientRect();return [pos[0]+w,pos[1]+(r.top-nr.top+r.height/2)/(nr.width/w)];}
   return [pos[0] + w, pos[1] + h - 14];
 }
 
@@ -676,13 +691,14 @@ function applyFilter() {
 /* --------------------------------------------------------------- inspector */
 
 function hl(src) {
-  const re = /(\/\/[^\n]*)|(^[ \t]*(?:VAR|CONST|LIST|EXTERNAL|INCLUDE)\b[^\n]*)|(^[ \t]*~[^\n]*)|(#[^\n]*)|(\{[^{}\n]*\})|((?:->->|->|<-)[ \t]*[\w.]*)|(^[ \t]*[*+\-]+)|(\([A-Za-z_]\w*\))/gm;
+  const re = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|(^[ \t]*(?:VAR|CONST|LIST|EXTERNAL|INCLUDE)\b[^\n]*)|(^[ \t]*~[^\n]*)|(#[^\n]*)|(\{[^{}\n]*\})|((?:->->|->|<-)[ \t]*[\w.]*)|(^[ \t]*[*+\-]+)|(\([A-Za-z_]\w*\))/gm;
   const cls = ['tok-comment', 'tok-decl', 'tok-logic', 'tok-tag', 'tok-cond', 'tok-divert', 'tok-marker', 'tok-label'];
   let out = '', last = 0, m;
   while ((m = re.exec(src))) {
     out += esc(src.slice(last, m.index));
     let k = 0; for (let i = 1; i <= 8; i++) if (m[i] !== undefined) { k = i - 1; break; }
-    out += `<span class="${cls[k]}">${esc(m[0])}</span>`;
+    const help=window.InkblotsSyntaxHelp.identify(m[0],cls[k],src.slice(re.lastIndex));
+    out += `<span class="${cls[k]}"${help ? ` data-help="${help}"` : ''}>${esc(m[0])}</span>`;
     last = m.index + m[0].length;
   }
   return out + esc(src.slice(last)) + '\n';
@@ -746,6 +762,7 @@ function renderInspector() {
   });
   wrap.appendChild(pre); wrap.appendChild(ta);
   box.appendChild(wrap);
+  window.InkblotsSyntaxHelp.attach(ta,code);
 
   const acts = el('div', 'side-actions');
   const mk = (label, fn) => { const b = ui('button', 'btn', label); b.onclick = fn; acts.appendChild(b); };
@@ -922,14 +939,38 @@ function retarget(nodeId, idx, newTarget) {
 }
 
 function addDivert(fromId, toId) {
+  flushPendingEdit();
   const n = State.nodes[fromId];
   pushHistory();
   const target = divertName(n, toId);
-  n.body = (n.body ? n.body.replace(/\s+$/, '') + '\n' : '') + '-> ' + target;
+  const hasChoices=window.inkChoiceView(n).rows.length>0;
+  n.body = (n.body ? n.body.replace(/\s+$/, '') + '\n' : '') + (hasChoices ? '- ' : '') + '-> ' + target;
   scanDiverts(n); buildEdges(); render();
   if (State.sel === fromId) renderInspector();
   setDirty(true);
   toast('Added -> ' + target);
+}
+
+function addChoice(nodeId) {
+  flushPendingEdit();
+  const n=State.nodes[nodeId];if(!n)return;
+  pushHistory();
+  const lines=n.body.split('\n'), rows=window.inkChoiceView(n).rows;
+  let at=lines.length;
+  if(rows.length){
+    const last=rows[rows.length-1].line;
+    const gather=lines.findIndex((line,i)=>i>last && /^\s*-(?!-|>)(?:\s|$)/.test(line));
+    if(gather>=0)at=gather;
+  } else {
+    // Keep the existing terminal flow separate from the new choice branch.
+    while(at>0 && !lines[at-1].trim())at--;
+    if(at>0 && /^\s*->/.test(lines[at-1])){at--;lines.splice(at,0,'-');}
+  }
+  const label=t('New choice');
+  lines.splice(at,0,'+ ['+label+']','    -> DONE');n.body=lines.join('\n');
+  scanDiverts(n);buildEdges();render();select(nodeId);setDirty(true);
+  const editor=$('#side-body textarea'),start=lines.slice(0,at).join('\n').length+(at?1:0)+3;
+  editor.focus();editor.setSelectionRange(start,start+label.length);
 }
 
 function divertName(fromNode, toId) {
@@ -1032,14 +1073,14 @@ let drag = null, link = null, pan = null;
 canvas.addEventListener('mousedown', (ev) => {
   if (!Tabs.length) return;
   if (ev.button !== 0 && ev.button !== 1) return;
-  if (ev.target.closest('.zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
+  if (ev.target.closest('.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
   const pill = ev.target.closest('.pill[data-idx]');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
 
   if (add && node) { startLink(node.dataset.id, -1, ev); return; }
   if (pill && node) {
-    if (pill.classList.contains('term')) return;
+    if (pill.classList.contains('term') && (!pill.classList.contains('choice-port') || !State.nodes[node.dataset.id].diverts[Number(pill.dataset.idx)]?.target)) return;
     startLink(node.dataset.id, Number(pill.dataset.idx), ev);
     return;
   }
@@ -1138,7 +1179,7 @@ canvas.addEventListener('click', (ev) => {
 canvas.addEventListener('dblclick', (ev) => {
   if (!Tabs.length) return;
   if (ev.target.closest('.node')) { return; }
-  if (ev.target.closest('.zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
+  if (ev.target.closest('.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
   const w = screenToWorld(ev.clientX, ev.clientY);
   ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', (name) => {
     if (name) addKnot(name, [Math.round(w[0]) - 120, Math.round(w[1]) - 40]);
@@ -1827,7 +1868,7 @@ window.Inkblots = {
   parse, serialize, load, compile, autoLayout, render,
   saveFile, undo, redo, cancelInkTooltip,
   pushHistory, setDirty, select, ask, screenToWorld, applyTransform, drawEdges, applySnippet, addKnot, renameNode,
-  addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
+  addChoice, addDivert, addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
 };
 
 loadInk();

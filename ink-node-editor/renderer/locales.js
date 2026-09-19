@@ -347,7 +347,10 @@ const messages = {
     "Automatic choice": "自動選択肢",
     "Continues within this node": "このノード内で続行",
     "Connection to {name}": "{name}への接続",
-    "Ends or returns: {name}": "終了または復帰：{name}"
+    "Ends or returns: {name}": "終了または復帰：{name}",
+    "Add choice": "選択肢を追加",
+    "New choice": "新しい選択肢",
+    "Include another Ink file in this story.": "別のInkファイルをこのストーリーに取り込みます。"
   },
   "zh-CN": {
     "File": "文件",
@@ -695,7 +698,10 @@ const messages = {
     "Automatic choice": "自动选项",
     "Continues within this node": "在此节点内继续",
     "Connection to {name}": "连接到 {name}",
-    "Ends or returns: {name}": "结束或返回：{name}"
+    "Ends or returns: {name}": "结束或返回：{name}",
+    "Add choice": "添加选项",
+    "New choice": "新选项",
+    "Include another Ink file in this story.": "将另一个 Ink 文件包含到此故事中。"
   },
   "pt-BR": {
     "File": "Arquivo",
@@ -1043,7 +1049,10 @@ const messages = {
     "Automatic choice": "Escolha automática",
     "Continues within this node": "Continua neste nó",
     "Connection to {name}": "Conexão com {name}",
-    "Ends or returns: {name}": "Encerra ou retorna: {name}"
+    "Ends or returns: {name}": "Encerra ou retorna: {name}",
+    "Add choice": "Adicionar escolha",
+    "New choice": "Nova escolha",
+    "Include another Ink file in this story.": "Inclui outro arquivo Ink nesta história."
   }
 };
 if(typeof module !== "undefined" && module.exports) module.exports=messages;

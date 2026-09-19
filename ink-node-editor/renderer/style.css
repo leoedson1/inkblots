@@ -538,3 +538,17 @@ button { cursor: pointer; }
 .node.has-choices .addout { top: 14px; right: -9px; margin-top: 0; }
 
 .node.has-choices .choice-continuation {border-top: 2px solid var(--line);}
+
+.node .addchoice { position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:20px; height:20px; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--panel-2); color:var(--fg-dim); display:grid; place-items:center; opacity:0; cursor:pointer; z-index:2; }
+.node:hover .addchoice, .node .addchoice:focus-visible {opacity:1;}
+.node .addchoice:hover {border-color:var(--choice);color:var(--choice);}
+.node.has-choices .prose {position:relative;}
+.body-exits {position:absolute;right:-7px;top:0;height:100%;display:flex;flex-direction:column;justify-content:space-evenly;}
+.node .body-port {width:12px;height:12px;min-width:12px;padding:0;border-radius:50%;background:var(--accent);border-color:var(--accent);overflow:visible;}
+.node .body-port.term {background:var(--end);border-color:var(--end);}
+.node .body-port.broken {background:var(--broken);border-color:var(--broken);}
+.node.has-choices:hover .addout {right:-24px;}
+.node .choice-port.term {cursor:crosshair;}
+#inspector-tooltip {max-width:340px;z-index:220;}
+
+.node.has-choices > .prose {overflow:visible;}
