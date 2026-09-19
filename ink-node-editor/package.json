@@ -1,7 +1,7 @@
 {
   "name": "inkweave",
   "productName": "Inkweave",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A node-based editor for Ink scripts",
   "main": "main.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "dist": "electron-builder",
     "predist": "npm run check:version",
     "test": "node --test tests/*.test.js",
+    "test:inspector": "node scripts/test-inspector.cjs",
     "check:version": "node scripts/version.cjs --check",
     "release:version": "node scripts/version.cjs"
   },
@@ -21,10 +22,37 @@
   },
   "build": {
     "appId": "com.example.inkweave",
-    "files": ["main.js", "preload.js", "renderer/**", "node_modules/inkjs/dist/ink-full.js"],
-    "mac": { "category": "public.app-category.developer-tools", "target": ["dmg", "zip"] },
-    "win": { "target": ["nsis"] },
-    "linux": { "target": ["AppImage", "deb"], "category": "Development" },
-    "fileAssociations": [{ "ext": "ink", "name": "Ink script", "role": "Editor" }]
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**",
+      "node_modules/inkjs/dist/ink-full.js"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "fileAssociations": [
+      {
+        "ext": "ink",
+        "name": "Ink script",
+        "role": "Editor"
+      }
+    ]
   }
 }

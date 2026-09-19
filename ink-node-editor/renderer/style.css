@@ -340,6 +340,9 @@ button { cursor: pointer; }
   -webkit-font-smoothing: antialiased;
 }
 .editor-wrap pre { position: absolute; inset: 0; overflow: hidden; pointer-events: none; color: var(--fg); padding-right: 22px; }
+/* Chromium gives <code> its own monospace font. Inherit the exact font from
+   the shared pre/textarea rule so selection and highlighted text align. */
+.editor-wrap pre code { font: inherit; }
 .editor-wrap textarea {
   position: absolute; inset: 0; resize: none; background: transparent;
   color: transparent; caret-color: var(--accent); outline: none;
