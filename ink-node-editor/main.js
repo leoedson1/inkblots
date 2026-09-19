@@ -95,6 +95,7 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: '#11141b',
     title: 'Inkblots',
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#161a23', symbolColor: '#e3e7f0', height: 48 },
     webPreferences: {

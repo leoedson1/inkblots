@@ -343,7 +343,11 @@ const messages = {
     "The Ink compiler did not load, so Play is unavailable.": "Inkコンパイラを読み込めなかったため、再生できません。",
     "You have unsaved changes in 1 tab.": "1個のタブに未保存の変更があります。",
     "1 unresolved divert": "未解決のディバート：1",
-    "1 divert points here and will break.": "ここへの1個のディバートが無効になります。"
+    "1 divert points here and will break.": "ここへの1個のディバートが無効になります。",
+    "Automatic choice": "自動選択肢",
+    "Continues within this node": "このノード内で続行",
+    "Connection to {name}": "{name}への接続",
+    "Ends or returns: {name}": "終了または復帰：{name}"
   },
   "zh-CN": {
     "File": "文件",
@@ -687,7 +691,11 @@ const messages = {
     "The Ink compiler did not load, so Play is unavailable.": "Ink 编译器未加载，无法试玩。",
     "You have unsaved changes in 1 tab.": "1 个标签页有未保存的更改。",
     "1 unresolved divert": "1 个未解析的跳转",
-    "1 divert points here and will break.": "指向此处的 1 个跳转将失效。"
+    "1 divert points here and will break.": "指向此处的 1 个跳转将失效。",
+    "Automatic choice": "自动选项",
+    "Continues within this node": "在此节点内继续",
+    "Connection to {name}": "连接到 {name}",
+    "Ends or returns: {name}": "结束或返回：{name}"
   },
   "pt-BR": {
     "File": "Arquivo",
@@ -1031,7 +1039,11 @@ const messages = {
     "The Ink compiler did not load, so Play is unavailable.": "O compilador Ink não carregou; não é possível jogar.",
     "You have unsaved changes in 1 tab.": "Há alterações não salvas em 1 aba.",
     "1 unresolved divert": "1 desvio não resolvido",
-    "1 divert points here and will break.": "1 desvio aponta para cá e deixará de funcionar."
+    "1 divert points here and will break.": "1 desvio aponta para cá e deixará de funcionar.",
+    "Automatic choice": "Escolha automática",
+    "Continues within this node": "Continua neste nó",
+    "Connection to {name}": "Conexão com {name}",
+    "Ends or returns: {name}": "Encerra ou retorna: {name}"
   }
 };
 if(typeof module !== "undefined" && module.exports) module.exports=messages;

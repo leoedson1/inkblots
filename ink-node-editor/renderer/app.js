@@ -501,14 +501,45 @@ function render() {
       d.appendChild(declRow);
     }
 
+    const choices = window.inkChoiceView(n);
+    if (choices.rows.length) d.classList.add('has-choices');
     const prose = el('div', 'prose');
-    const lines = previewOf(n);
+    const lines = previewOf(choices.rows.length ? {body:choices.before} : n);
     if (!lines.length) prose.appendChild(ui('div', 'empty', 'no text yet'));
     else lines.forEach(l => prose.appendChild(el('div', null, l)));
-    d.appendChild(prose);
+    if (lines.length || !choices.rows.length) d.appendChild(prose);
+    for (const choice of choices.rows) {
+      const row = el('div', 'choice-row'); row.dataset.line = choice.line;
+      row.style.setProperty('--choice-depth', Math.min(choice.depth-1, 5));
+      row.style.minHeight=Math.max(46,choice.exits.length*18+12)+'px';
+      row.appendChild(choice.label ? el('div', 'choice-label', choice.label) : ui('div','choice-label','Automatic choice'));
+      const ports = el('div','choice-ports');
+      for (const o of choice.exits) {
+        const terminal=o.kind==='return' || o.res?.special;
+        const port=el('div', 'pill choice-port' + (terminal ? ' term' : !o.res && !o.soft ? ' broken' : ''));
+        port.dataset.node=id;port.dataset.idx=o.idx;port.tabIndex=0;
+        const target=o.raw || 'return';
+        I.bind(port, terminal ? 'Ends or returns: {name}' : 'Connection to {name}', 'title', {name:target});
+        I.bind(port, 'Connection to {name}', 'aria-label', {name:target});
+        ports.appendChild(port);
+      }
+      if (!choice.exits.length) {
+        const local=el('div','choice-port local');
+        I.bind(local,'Continues within this node','title');ports.appendChild(local);
+      }
+      row.appendChild(ports);d.appendChild(row);
+    }
 
+    if(choices.rows.length) {
+      const continuation=previewOf({body:choices.after});
+      if(continuation.length) {
+        const after=el('div','prose choice-continuation');
+        continuation.forEach(line=>after.appendChild(el('div',null,line)));d.appendChild(after);
+      }
+    }
     const pills = el('div', 'pills');
-    (n.out || []).slice(0, 9).forEach((o) => {
+    const otherExits = (n.out || []).filter(o=>!choices.rowExits.has(o.idx));
+    otherExits.slice(0, 9).forEach((o) => {
       let cls = 'pill ' + o.kind, label;
       if (o.kind === 'return') { cls = 'pill term'; label = '↩ return'; }
       else if (o.res && o.res.special) { cls = 'pill term'; label = '■ ' + o.res.special; }
@@ -520,8 +551,8 @@ function render() {
       I.bind(p, o.res ? '' : o.soft ? 'Target comes from a ' + o.soft : 'No knot, stitch or label called ' + o.raw + ' — click to create it', 'title');
       pills.appendChild(p);
     });
-    if ((n.out || []).length > 9) pills.appendChild(el('div', 'pill', '+' + (n.out.length - 9)));
-    d.appendChild(pills);
+    if (otherExits.length > 9) pills.appendChild(el('div', 'pill', '+' + (otherExits.length - 9)));
+    if(otherExits.length) d.appendChild(pills);
 
     const add = el('div', 'addout', '+');
     I.bind(add, 'Drag to another knot to add a divert', 'title');
@@ -543,7 +574,11 @@ function anchorFor(nodeId, idx) {
   const w = n._el.offsetWidth, h = n._el.offsetHeight;
   if (idx >= 0) {
     const pill = n._el.querySelector('.pill[data-idx="' + idx + '"]');
-    if (pill) return [pos[0] + w, pos[1] + pill.offsetTop + pill.offsetHeight / 2];
+    if (pill) {
+      const r=pill.getBoundingClientRect(), nodeRect=n._el.getBoundingClientRect();
+      const scale=nodeRect.width/w;
+      return [pos[0]+w, pos[1]+(r.top-nodeRect.top+r.height/2)/scale];
+    }
   }
   return [pos[0] + w, pos[1] + h - 14];
 }
@@ -576,8 +611,9 @@ function drawEdges() {
       : path(a, b);
     const p = document.createElementNS(ns, 'path');
     p.setAttribute('d', dstr);
-    p.setAttribute('class', 'e-' + e.kind);
-    p.dataset.from = e.from; p.dataset.to = e.to;
+    const choicePort=State.nodes[e.from]?._el?.querySelector('.choice-port[data-idx="'+e.idx+'"]');
+    p.setAttribute('class', 'e-' + (choicePort && e.kind==='divert' ? 'choice' : e.kind));
+    p.dataset.from = e.from; p.dataset.to = e.to; p.dataset.idx=e.idx;
     egroup.appendChild(p);
   }
   applyFilter();
@@ -997,7 +1033,7 @@ canvas.addEventListener('mousedown', (ev) => {
   if (!Tabs.length) return;
   if (ev.button !== 0 && ev.button !== 1) return;
   if (ev.target.closest('.zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
-  const pill = ev.target.closest('.pill');
+  const pill = ev.target.closest('.pill[data-idx]');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
 
@@ -1087,10 +1123,10 @@ function startLink(from, idx, ev) {
 }
 
 canvas.addEventListener('click', (ev) => {
-  const pill = ev.target.closest('.pill');
+  const pill = ev.target.closest('.pill[data-idx]');
   if (pill && pill.classList.contains('broken')) {
     const node = pill.closest('.node');
-    const raw = State.nodes[node.dataset.id].out[Number(pill.dataset.idx)].raw;
+    const raw = State.nodes[node.dataset.id].out.find(o=>o.idx===Number(pill.dataset.idx)).raw;
     ask('Create ' + raw + '?', 'No knot with that name exists yet.', raw, (name) => {
       if (!name) return;
       const p = State.layout[node.dataset.id] || [0, 0];

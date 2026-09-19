@@ -3,6 +3,19 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.6.0] - 2026-09-19
+
+- Display choices as divided node rows with edge connectors and add the Inkblots app icon
+
+- Choice nodes now follow the supplied sketch: scene prose, divided choice rows and right-edge output dots. Choice labels are no longer repeated in prose and target pills.
+- Retains direct, multiline and nested choice exits, multiple exits per row, and all choices beyond the previous nine-pill display limit. Hollow dots distinguish local continuation; shared gather prose remains below the rows.
+- Connectors retain drag-to-rewire, broken-target creation and inline comment previews. Anchors follow the individual row at different zoom levels while keeping the existing spline routing.
+- Added the supplied Inkblots artwork unchanged as the application/window icon and packaging icon, plus the browser favicon.
+
+Validation: 26 unit tests and 25 Electron choice-card checks passed, covering source preservation, direct/nested/multiline/local choices, output-only text, comment handling, twelve options, shared gathers, connector positions at three zoom levels, rewiring/undo, save/reload and zone fit. Existing 62 canvas checks, 48 language checks, workspace/menu checks and inspector alignment at four zoom levels passed. Choice-card screenshots were visually reviewed.
+
+Build: Windows NSIS installer `Inkblots Setup 0.6.0.exe` generated successfully on retry after an initial packaging failure. Packaged version, choice renderer and unchanged supplied PNG verified in app.asar; the executable icon was extracted and visually checked. Installer installation was not tested.
+
 ## [0.5.0] - 2026-09-19
 
 - Fit zones to their nodes and add multilingual UI, hotkeys help, and Full Feature Demo naming

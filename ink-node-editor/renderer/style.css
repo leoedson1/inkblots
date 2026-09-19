@@ -521,3 +521,20 @@ button { cursor: pointer; }
 
 .help-guide table {width:100%;border-collapse:collapse} .help-guide th,.help-guide td {text-align:left;padding:9px;border-bottom:1px solid var(--line)} .help-guide td:first-child {white-space:nowrap;font-family:var(--mono)}
 .bar .menu-top {white-space:nowrap} .bar #search {min-width:90px}
+
+/* Choice cards: scene text above divided options, each with an edge connector. */
+.node.has-choices { width: 280px; }
+.node.has-choices .head { background: transparent; border-bottom: 0; }
+.node.has-choices .head .nm { color: var(--accent); }
+.node.has-choices .prose { padding: 10px 14px 14px; max-height: none; color: var(--fg); font-family: var(--sans); font-size: 13px; }
+.choice-row { position: relative; padding: 13px 20px 13px calc(14px + var(--choice-depth) * 12px); border-top: 2px solid var(--line); min-height: 46px; display: flex; align-items: center; }
+.choice-label { font-family: var(--sans); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; color: var(--fg); }
+.choice-ports { position: absolute; right: -7px; top: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-evenly; }
+.node .choice-port { flex: none; width: 12px; height: 12px; min-width: 12px; padding: 0; border: 2px solid var(--choice); border-radius: 50%; background: var(--choice); cursor: crosshair; overflow: visible; }
+.node .choice-port:hover, .node .choice-port:focus-visible { outline: 3px solid var(--accent-soft); }
+.node .choice-port.broken { background: var(--broken); border-color: var(--broken); }
+.node .choice-port.term { background: var(--end); border-color: var(--end); cursor: default; }
+.node .choice-port.local { background: var(--card); border-color: var(--fg-faint); cursor: default; }
+.node.has-choices .addout { top: 14px; right: -9px; margin-top: 0; }
+
+.node.has-choices .choice-continuation {border-top: 2px solid var(--line);}

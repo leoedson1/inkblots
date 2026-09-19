@@ -129,3 +129,17 @@ Localization uses explicit UI bindings in `renderer/i18n.js` and dictionaries in
 `renderer/locales.js`; it never translates the editor DOM indiscriminately.
 Run `npm run test:languages` for Electron language switching and content-preservation
 checks. The Full Feature Demo remains available under Ink → Full stories.
+
+## Choice cards and icon
+
+Nodes with choices show scene prose above separated option rows, with one right-edge
+connector per explicit exit. Choice text is shown once, without Ink choice markers,
+leading availability conditions or square brackets. Drag a filled connector to
+rewire its divert; hollow connectors indicate choices that continue within the node.
+Nested choices are indented, and shared gather prose stays below the options.
+All choice rows remain visible, including stories with more than nine options.
+This is a display change: the original Ink source and story behavior are preserved.
+
+The supplied Inkblots artwork is stored unchanged in `assets/icon.png` and used for
+the Electron window, executable/installer packaging and browser favicon.
+Run `npm run test:choices` for rendered rows, connector alignment and rewiring checks.
