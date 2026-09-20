@@ -155,3 +155,27 @@ Both edits support undo.
 Pause over highlighted Ink syntax in the text inspector to see a short explanation
 near the cursor, in the selected interface language. Hints dismiss when you type,
 select text, scroll, or move away.
+
+## Direct editing and variable nodes
+
+Double-click a node to edit its Ink body directly on the canvas. Ctrl+Enter or
+clicking outside finishes editing; Escape restores the original body. Changes
+are included in saves while typing. Choice nodes use the same header and prose
+style as other nodes; `*` marks a one-time choice and a circled `+` a sticky choice.
+
+Story → Variable node, or searching Variable node in Shift+A, creates an Ink VAR
+declaration and its card. Existing VAR declarations also appear as cards. Edit
+the initial value on the card and drag its output to:
+
+- A normal node: enter the value/expression assigned when that node is entered.
+- A choice's left input: enter an Ink condition, such as `score >= 3` or `has_key`.
+
+Assignment and condition tags mirror the source, and dashed variable wires follow
+their references. The × on a tag removes that statement/condition. Positions are
+saved in Inkblots metadata; the actual declarations, assignments and conditions
+are ordinary Ink and work outside the editor. Ordinary diverts can also connect
+to choice inputs, creating a named choice label and entering that branch directly.
+
+Delete/Backspace, Edit → Delete selected nodes, or the selection toolbar deletes
+the full selection (and selected knots' stitches) with one confirmation and one
+undo step. The Start/global node is preserved.

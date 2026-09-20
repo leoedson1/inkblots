@@ -3,6 +3,22 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.8.0] - 2026-09-20
+
+- Add direct node editing, variable connections, choice inputs, and batch deletion
+
+- Restored the shared header and prose styling on choice cards. One-time choices have a * marker; sticky choices have a circled + marker.
+- Double-click nodes to edit Ink directly. Ctrl+Enter or blur finishes; Escape cancels. Draft text is saved immediately and each editing session supports undo.
+- Added Variable node to Story and cursor insertion menus. Existing VAR declarations also get cards with editable initial values and persistent canvas positions.
+- Drag variable outputs to normal nodes to insert assignments on entry, or to left-side choice inputs to insert conditions. Assignment/condition tags expose the generated source and offer removal. Dashed wires are derived from source references and survive edits and save/reload.
+- Normal divert connections can target choice inputs via named choice labels. Such diverts enter the named branch directly; variable conditions control choice availability.
+- Delete/Backspace, the Edit menu and selection toolbar delete all selected story nodes and their child stitches with one confirmation and one undo step. Start is preserved; zone membership is restored by undo.
+- Updated the user guide, hotkeys guide and Japanese, Chinese and Brazilian Portuguese UI translations.
+
+Validation: 42 new Electron node/variable checks passed, including runtime assignment and conditional-choice behavior, direct typing and save-before-blur, undo/cancel, source-backed link persistence, actual variable drag/drop, value editing, and batch deletion/cancel/undo with stitches and zones. All 26 unit tests, 42 existing choice checks, 62 canvas checks, 48 language checks, workspace checks and inspector alignment at four zoom levels passed. Variable cards and condition tags were visually reviewed in light and dark themes.
+
+Build: Windows installer `Inkblots Setup 0.8.0.exe` generated successfully from clean staging. Packaged version, all changed renderer modules and unchanged icon verified against source. Installer installation was not tested.
+
 ## [0.7.1] - 2026-09-20
 
 - Show structure names above inspector tooltip explanations

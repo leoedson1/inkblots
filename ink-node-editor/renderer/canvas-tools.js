@@ -26,7 +26,7 @@
         color: colors.includes(x.color) ? x.color : type === 'zones' ? 'blue' : 'amber',
         ...(type === 'zones' ? { name: String(x.name || 'Zone'), members: Array.isArray(x.members) ? x.members.filter(id => typeof id === 'string') : [] } : { text: String(x.text || '') }),
       }));
-      s.organizer = { zones: clean(raw.zones, 'zones'), notes: clean(raw.notes, 'notes') };
+      s.organizer = { variablePositions: raw.variablePositions && typeof raw.variablePositions==='object' ? raw.variablePositions : {}, zones: clean(raw.zones, 'zones'), notes: clean(raw.notes, 'notes') };
       normalizedState = s; normalizedObject = s.organizer;
     }
     return s.organizer;
@@ -69,7 +69,7 @@
     updateSelection();
   }
   const actions = make('div', '', ''); actions.id = 'selection-actions';
-  const count = make('span'); actions.append(count, button('Group into zone', 'Group selected nodes into a zone', () => addZone()), button('Clear', 'Clear selection', () => selectMany([])));
+  const count = make('span'); actions.append(count, button('Group into zone', 'Group selected nodes into a zone', () => addZone()), button('Delete selected nodes', 'Delete selected nodes', () => A.deleteSelectedNodes()), button('Clear', 'Clear selection', () => selectMany([])));
   canvas.appendChild(actions);
   function updateSelection() {
     state().selection = state().selection.filter(id=>state().nodes[id]);
@@ -176,7 +176,7 @@
   const results=make('div','quick-results');results.id='quick-results';results.setAttribute('role','listbox');search.setAttribute('aria-controls',results.id);
   popup.append(search,results);document.body.appendChild(popup);
   const entries=(window.INK_SNIPPETS||[]).flatMap(g=>g.items.map(it=>({label:it.label,desc:it.desc||'',group:g.label,it})));
-  entries.unshift({label:'Sticky note',desc:'Add an editable note to the canvas.',action:()=>addNote(popupPoint)},{label:'Zone / group',desc:'Organize selected nodes in a named area.',action:()=>addZone(popupPoint)});
+  entries.unshift({label:'Variable node',desc:'Declare a variable and connect assignments or choice conditions.',action:()=>window.InkblotsVariables.add(popupPoint)},{label:'Sticky note',desc:'Add an editable note to the canvas.',action:()=>addNote(popupPoint)},{label:'Zone / group',desc:'Organize selected nodes in a named area.',action:()=>addZone(popupPoint)});
   let filtered=[],active=0,returnFocus=null;
   function closeQuick(restore=false){popup.hidden=true;if(restore && returnFocus?.isConnected)returnFocus.focus();}
   function markActive(){[...results.children].forEach((row,i)=>{row.classList.toggle('active',i===active);row.setAttribute('aria-selected',String(i===active));});search.setAttribute('aria-activedescendant','quick-option-'+active);results.children[active]?.scrollIntoView({block:'nearest'});}
@@ -210,6 +210,7 @@
     const s=state(),v=s.view,items=[];
     data().zones.forEach(z=>items.push({...z,type:'zone'}));data().notes.forEach(n=>items.push({...n,type:'note'}));
     s.order.forEach(id=>{const n=s.nodes[id],p=s.layout[id];if(n._el && p)items.push({x:p[0],y:p[1],w:n._el.offsetWidth,h:n._el.offsetHeight,type:s.selection.includes(id)?'selected':'node'});});
+    document.querySelectorAll('.variable-card').forEach(card=>items.push({x:parseFloat(card.style.left),y:parseFloat(card.style.top),w:card.offsetWidth,h:card.offsetHeight,type:'node'}));
     const viewport={x:-v.x/v.k,y:-v.y/v.k,w:canvas.clientWidth/v.k,h:canvas.clientHeight/v.k};
     const all=[...items,viewport],x=Math.min(...all.map(r=>r.x))-40,y=Math.min(...all.map(r=>r.y))-40;
     const w=Math.max(...all.map(r=>r.x+r.w))-x+40,h=Math.max(...all.map(r=>r.y+r.h))-y+40,k=Math.min(188/w,108/h);

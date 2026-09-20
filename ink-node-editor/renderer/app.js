@@ -199,7 +199,7 @@ function resolveTarget(node, raw) {
   if (N[raw]) return { id: raw };
   if (parts.length > 1) {
     const joined = parts.slice(0, 2).join('.');
-    if (N[joined]) return { id: joined };
+    if (N[joined]) return { id: joined, ...(parts.length>2 && N[joined].labels.includes(parts[2]) ? {label:parts[2]} : {}) };
     if (N[parts[0]] && N[parts[0]].labels.includes(parts[1])) return { id: parts[0], label: parts[1] };
   }
   for (const id of State.order) if (State.nodes[id].labels.includes(raw)) return { id, label: raw };
@@ -510,6 +510,8 @@ function render() {
     if (lines.length || !choices.rows.length) d.appendChild(prose);
     for (const choice of choices.rows) {
       const row = el('div', 'choice-row'); row.dataset.line = choice.line;
+      row.classList.add(choice.sticky?'sticky-choice':'once-choice');
+      const marker=el('span','choice-marker',choice.sticky?'+':'*');I.bind(marker,choice.sticky?'Sticky choice':'Choice','title');row.appendChild(marker);
       row.style.setProperty('--choice-depth', Math.min(choice.depth-1, 5));
       row.style.minHeight=Math.max(46,choice.exits.length*18+12)+'px';
       row.appendChild(choice.label ? el('div', 'choice-label', choice.label) : ui('div','choice-label','Automatic choice'));
@@ -619,7 +621,8 @@ function drawEdges() {
   egroup.textContent = '';
   const ns = 'http://www.w3.org/2000/svg';
   for (const e of State.edges) {
-    const a = anchorFor(e.from, e.idx), b = inletFor(e.to);
+    const a = anchorFor(e.from, e.idx); let b = inletFor(e.to);
+    if(e.label){const n=State.nodes[e.to];const line=n.body.split('\n').findIndex(l=>l.match(RE_LABEL)?.[1]===e.label);const port=n._el?.querySelector('.choice-row[data-line="'+line+'"] .choice-inlet');if(port){const r=port.getBoundingClientRect();b=screenToWorld(r.left+r.width/2,r.top+r.height/2);}}
     if (!a || !b) continue;
     const dstr = e.from === e.to
       ? `M${a[0]},${a[1]} C${a[0] + 90},${a[1] - 40} ${b[0] - 90},${b[1] - 50} ${b[0]},${b[1]}`
@@ -632,6 +635,7 @@ function drawEdges() {
     egroup.appendChild(p);
   }
   applyFilter();
+  window.dispatchEvent(new Event('inkblots-edges'));
 }
 
 function applyTransform() {
@@ -768,7 +772,7 @@ function renderInspector() {
   const mk = (label, fn) => { const b = ui('button', 'btn', label); b.onclick = fn; acts.appendChild(b); };
   mk('Add stitch', () => addStitch(n.kind === 'stitch' ? n.parent : n.id));
   mk('Duplicate', () => duplicateNode(n.id));
-  if (n.kind !== 'start') mk('Delete', () => deleteNode(n.id));
+  if (n.kind !== 'start') mk('Delete', () => deleteSelectedNodes());
   mk('Focus', () => centerOn(n.id));
   box.appendChild(acts);
 }
@@ -855,19 +859,23 @@ function duplicateNode(id) {
   scanDiverts(n); buildEdges(); render(); select(n.id); setDirty(true);
 }
 
-function deleteNode(id) {
-  const n = State.nodes[id];
-  if (!n || n.kind === 'start') return;
-  const kids = State.order.filter(x => State.nodes[x].parent === id);
-  const refs = State.edges.filter(e => e.to === id && e.from !== id && e.kind !== 'flow').length;
-  const msg = refs ? t(refs === 1 ? '1 divert points here and will break.' : '{count} diverts point here and will break.', {count:refs}) : '';
-  ask('Delete ' + n.name + '?', msg + (kids.length ? t(' Its {count} stitches go too.', {count:kids.length}) : ''), null, (ok) => {
-    if (!ok) return;
-    pushHistory();
-    [id].concat(kids).forEach(x => { delete State.nodes[x]; delete State.layout[x]; State.order.splice(State.order.indexOf(x), 1); });
-    State.sel = null;
-    buildEdges(); render(); renderInspector(); setDirty(true);
-  }, true);
+function deleteNode(id) { deleteNodes([id]); }
+function deleteSelectedNodes() { deleteNodes(State.selection.length ? State.selection : [State.sel]); }
+function deleteNodes(ids) {
+  flushPendingEdit();
+  const state=State,chosen=new Set(ids.filter(id=>State.nodes[id] && State.nodes[id].kind!=='start'));
+  if(!chosen.size)return;
+  const removed=new Set([...chosen,...State.order.filter(id=>chosen.has(State.nodes[id].parent))]);
+  const refs=State.edges.filter(e=>removed.has(e.to) && !removed.has(e.from) && e.kind!=='flow').length;
+  const names=[...removed].map(id=>State.nodes[id].name).join(', ');
+  const warning=refs ? t(refs===1?'1 divert points here and will break.':'{count} diverts point here and will break.',{count:refs}) : '';
+  ask(chosen.size===1?'Delete '+State.nodes[[...chosen][0]].name+'?':'Delete selected nodes?',names+(warning?'\n'+warning:''),null,ok=>{
+    if(!ok || State!==state)return;
+    pushHistory();for(const id of removed){delete State.nodes[id];delete State.layout[id];}
+    State.order=State.order.filter(id=>!removed.has(id));State.sel=null;State.selection=[];
+    for(const zone of State.organizer.zones||[])zone.members=zone.members.filter(id=>!removed.has(id));
+    buildEdges();render();renderInspector();setDirty(true);
+  },true);
 }
 
 function renameNode(id, newName) {
@@ -951,6 +959,14 @@ function addDivert(fromId, toId) {
   toast('Added -> ' + target);
 }
 
+function updateBody(id,body,refresh=true) {
+  const n=State.nodes[id];if(!n)return;
+  n.body=body;scanDiverts(n);n.labels=[];
+  State.globals=new Set(State.order.flatMap(k=>[...State.nodes[k].body.matchAll(/^\s*(?:VAR|CONST|LIST|~\s*temp)\s+([A-Za-z_]\w*)/gm)].map(m=>m[1])));
+  body.split('\n').forEach(l=>{const m=l.match(RE_LABEL);if(m)n.labels.push(m[1]);});
+  buildEdges();if(refresh)render();setDirty(true);
+}
+
 function addChoice(nodeId) {
   flushPendingEdit();
   const n=State.nodes[nodeId];if(!n)return;
@@ -1026,6 +1042,7 @@ function bbox() {
     x0 = Math.min(x0,item.x); y0 = Math.min(y0,item.y);
     x1 = Math.max(x1,item.x+item.w); y1 = Math.max(y1,item.y+item.h);
   }
+  document.querySelectorAll('.variable-card').forEach(d=>{const x=parseFloat(d.style.left),y=parseFloat(d.style.top);x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+d.offsetWidth);y1=Math.max(y1,y+d.offsetHeight);});
   if (x0 === Infinity) return null;
   return { x0, y0, x1, y1 };
 }
@@ -1073,7 +1090,7 @@ let drag = null, link = null, pan = null;
 canvas.addEventListener('mousedown', (ev) => {
   if (!Tabs.length) return;
   if (ev.button !== 0 && ev.button !== 1) return;
-  if (ev.target.closest('.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
+  if (ev.target.closest('textarea,input,button,.choice-inlet,.variable-card,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
   const pill = ev.target.closest('.pill[data-idx]');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
@@ -1137,7 +1154,9 @@ window.addEventListener('mouseup', (ev) => {
     link.path.remove();
     const target = node && node.dataset.id;
     if (target && target !== link.from) {
-      if (link.idx >= 0) retarget(link.from, link.idx, divertName(State.nodes[link.from], target));
+      const row=over.closest('.choice-row');
+      if(row && window.InkblotsVariables){window.InkblotsVariables.connectFlow(link.from,link.idx,target,Number(row.dataset.line));}
+      else if (link.idx >= 0) retarget(link.from, link.idx, divertName(State.nodes[link.from], target));
       else addDivert(link.from, target);
     } else if (!node) {
       const w = screenToWorld(ev.clientX, ev.clientY);
@@ -1179,7 +1198,7 @@ canvas.addEventListener('click', (ev) => {
 canvas.addEventListener('dblclick', (ev) => {
   if (!Tabs.length) return;
   if (ev.target.closest('.node')) { return; }
-  if (ev.target.closest('.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
+  if (ev.target.closest('textarea,input,button,.choice-inlet,.variable-card,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
   const w = screenToWorld(ev.clientX, ev.clientY);
   ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', (name) => {
     if (name) addKnot(name, [Math.round(w[0]) - 120, Math.round(w[1]) - 40]);
@@ -1706,7 +1725,7 @@ window.addEventListener('keydown', (e) => {
   else if (mod && e.key === 'Enter') { e.preventDefault(); startPlay(State.sel); }
   else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && !typing) { e.preventDefault(); undo(); }
   else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) && !typing) { e.preventDefault(); redo(); }
-  else if (!typing && (e.key === 'Delete' || e.key === 'Backspace') && State.sel) { e.preventDefault(); deleteNode(State.sel); }
+  else if (!typing && (e.key === 'Delete' || e.key === 'Backspace') && State.sel) { e.preventDefault(); deleteSelectedNodes(); }
   else if (e.key === 'Escape') { closeModal(false); closeSource(); closeInkMenu(); }
 });
 
@@ -1868,7 +1887,7 @@ window.Inkblots = {
   parse, serialize, load, compile, autoLayout, render,
   saveFile, undo, redo, cancelInkTooltip,
   pushHistory, setDirty, select, ask, screenToWorld, applyTransform, drawEdges, applySnippet, addKnot, renameNode,
-  addChoice, addDivert, addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
+  deleteSelectedNodes, updateBody, retarget, divertName, addChoice, addDivert, addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
 };
 
 loadInk();

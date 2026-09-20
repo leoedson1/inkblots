@@ -15,7 +15,7 @@
         label=label.replace(/\s*(?:->|<-|#).*$/,'').trim();
         const bracket=label.indexOf('['), close=label.indexOf(']',bracket);
         if(bracket>=0 && close>=0)label=label.slice(0,bracket)+label.slice(bracket+1,close);
-        const row={line,depth,label:label.trim(),exits:[]};rows.push(row);stack.push(row);
+        const row={line,depth,sticky:choice[1].trim().endsWith('+'),conditions:[...choice[2].matchAll(/\{([^{}:|]*)\}/g)].map(m=>m[1]),label:label.trim(),exits:[]};rows.push(row);stack.push(row);
       } else if(gather) {
         while(stack.length && stack[stack.length-1].depth>=gather[1].length)stack.pop();
       }

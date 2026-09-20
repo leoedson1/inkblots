@@ -20,6 +20,7 @@
       ['Undo', () => edit('undo'), 'Ctrl+Z', true], ['Redo', () => edit('redo'), 'Ctrl+Shift+Z', true],
       ['Cut', () => native('cut'), 'Ctrl+X', true], ['Copy', () => native('copy'), 'Ctrl+C', true],
       ['Paste', () => native('paste'), 'Ctrl+V', true], ['Select all', () => native('selectAll'), 'Ctrl+A', true],
+      ['Delete selected nodes', () => A.deleteSelectedNodes(), 'Delete', true],
       ['Find knot', () => $('search').focus(), 'Ctrl+F', true],
     ]],
     ['View', [
@@ -33,6 +34,7 @@
     ['Story', [
       ['Insert Ink at cursor…', () => { const r = document.querySelector('#canvas').getBoundingClientRect(); window.InkblotsCanvas.openQuick(r.left+r.width/2,r.top+r.height/2); }, 'Shift+A', true],
       ['Group selected nodes', () => window.InkblotsCanvas.addZone(), 'Ctrl+G', true],
+      ['Variable node', () => window.InkblotsVariables.add(), '', true],
       ['Sticky note', () => window.InkblotsCanvas.addNote(), '', true],
       ['Add knot…', () => click('b-addknot'), '', true], ['Tidy layout', () => click('b-layout'), 'Ctrl+L', true],
       ['Full script', () => click('b-source'), 'Ctrl+E', true], ['Play', () => click('b-play'), 'Ctrl+Enter', true],

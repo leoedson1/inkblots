@@ -69,12 +69,16 @@
     "Language → System default follows your system language. Choose English, Japanese, Simplified Chinese or Brazilian Portuguese to override it. Help → Hotkeys guide lists shortcuts; Ink writing guide opens the external language reference."
   ]
 ];
+  sections.push(['h3','Node editing and variables'],
+    ['p','Double-click a node to type Ink directly. Ctrl+Enter or clicking outside applies the edit; Escape cancels it.'],
+    ['p','The * marker is a one-time choice; the circled + is a sticky choice. Use Story → Variable node or search Variable node in Shift+A to create a declaration.'],
+    ['p','Drag a variable output to a node to assign a value on entry, or to a choice input on the left to add a condition. Edit the expression in the prompt. Tags show assignments and conditions; × removes them. Ordinary diverts can also target choice inputs, entering the named branch directly.']);
   sections.forEach(([tag,text])=>guide.append(ui(tag,text)));
   const hotkeys=createGuide('hotkeys-guide','Inkblots · Hotkeys');
   hotkeys.append(ui('p','On macOS, use Cmd instead of Ctrl (tab switching uses Ctrl). Text fields keep their normal editing shortcuts.'));
   const table=document.createElement('table');
   const head=document.createElement('tr');head.append(ui('th','Shortcut'),ui('th','Action'));table.append(head);
-  const rows=[['Ctrl+N','New file'],['Ctrl+O','Open'],['Ctrl+S','Save'],['Ctrl+Shift+S','Save as…'],['Ctrl+W','Close tab'],['Alt+F4','Close Inkblots'],['Ctrl+Z','Undo'],['Ctrl+Shift+Z / Ctrl+Y','Redo'],['Ctrl+X / Ctrl+C / Ctrl+V','Cut / Copy / Paste'],['Ctrl+A','Select all'],['Ctrl+F','Find knot'],['Ctrl+L','Tidy layout'],['Ctrl+E','Full script'],['Ctrl+Enter','Play'],['Ctrl+G','Group selected nodes'],['Shift + left drag','Box select'],['Shift+A / right-click empty space','Insert Ink at cursor…'],['Delete / Backspace','Delete selected node'],['Ctrl+Tab / Ctrl+Shift+Tab','Next tab / Previous tab'],['Ctrl++ / Ctrl+-','Zoom interface in / out'],['Ctrl+0','Reset interface zoom'],['F11','Full screen'],['F5 / Ctrl+R','Reload'],['Ctrl+Shift+I','Developer tools'],['F10 / Alt+F','Focus menu bar'],['Escape','Dismiss menu or dialog'],['Arrow keys','Navigate minimap']];
+  const rows=[['Ctrl+N','New file'],['Ctrl+O','Open'],['Ctrl+S','Save'],['Ctrl+Shift+S','Save as…'],['Ctrl+W','Close tab'],['Alt+F4','Close Inkblots'],['Ctrl+Z','Undo'],['Ctrl+Shift+Z / Ctrl+Y','Redo'],['Ctrl+X / Ctrl+C / Ctrl+V','Cut / Copy / Paste'],['Ctrl+A','Select all'],['Ctrl+F','Find knot'],['Ctrl+L','Tidy layout'],['Ctrl+E','Full script'],['Ctrl+Enter','Play'],['Ctrl+G','Group selected nodes'],['Shift + left drag','Box select'],['Shift+A / right-click empty space','Insert Ink at cursor…'],['Delete / Backspace','Delete selected nodes'],['Ctrl+Tab / Ctrl+Shift+Tab','Next tab / Previous tab'],['Ctrl++ / Ctrl+-','Zoom interface in / out'],['Ctrl+0','Reset interface zoom'],['F11','Full screen'],['F5 / Ctrl+R','Reload'],['Ctrl+Shift+I','Developer tools'],['F10 / Alt+F','Focus menu bar'],['Escape','Dismiss menu or dialog'],['Arrow keys','Navigate minimap']];
   rows.forEach(([key,action])=>{const row=document.createElement('tr');row.append(ui('td',key),ui('td',action));table.append(row);});hotkeys.append(table);
   window.showInkblotsGuide=()=>{if(!guide.open)guide.showModal();};
   window.showInkblotsHotkeys=()=>{if(!hotkeys.open)hotkeys.showModal();};
