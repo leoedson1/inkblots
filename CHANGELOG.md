@@ -5,7 +5,12 @@ Each completed change receives a version and a dated entry here. Versions match
 
 ## [0.10.2] - 2026-09-20
 
-- Add localized README versions and language navigation
+- Add complete Japanese, Simplified Chinese, and Brazilian Portuguese versions
+  of the public README, with four-language navigation on every version.
+
+Validation: all 28 unit tests passed; the version check confirmed that the
+package, lockfile, and changelog agree; every localized README link resolves and
+no merge-conflict markers remain.
 
 ## [0.10.1] - 2026-09-20
 
