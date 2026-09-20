@@ -3,6 +3,14 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.10.3] - 2026-09-20
+
+- Correct the English README preface wording in a normal follow-up commit,
+  preserving linear `main` history after the local amend.
+
+Validation: all 28 unit tests passed, and the version check confirmed that the
+package, lockfile, and changelog agree.
+
 ## [0.10.2] - 2026-09-20
 
 - Add complete Japanese, Simplified Chinese, and Brazilian Portuguese versions

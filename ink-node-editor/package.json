@@ -1,7 +1,7 @@
 {
   "name": "inkblots",
   "productName": "Inkblots",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "A node-based editor for Ink scripts",
   "main": "main.js",
   "scripts": {

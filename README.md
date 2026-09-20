@@ -19,7 +19,7 @@ as the source of truth.
 
 ## Preface
 
-I'd like to state upfront in very clear terms that **this project was basically vibecoded as all hell** because just I wanted a quick tool like this one to help me with my scenario writing and **I know jackshit about Javascript**. As it is right now, Inkblots works well enough for my personal objectives, but I want to keep refining the features until a lot of people can enjoy using, so **your feedback is deeply appreciated**. 
+I'd like to state upfront in very clear terms that **this project was basically vibecoded as all hell** because I just wanted a quick tool like this one to help me with my scenario writing and **I know jackshit about Javascript**. As it is right now, Inkblots works well enough for my personal objectives, but I want to keep refining the features until a lot of people can enjoy using, so **your feedback is deeply appreciated**.
 
 #### Feedback that is NOT deeply appreciated
 - Your logo sucks (I know, I made it in a couple minutes, maybe I'll make it better later).
