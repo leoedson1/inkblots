@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="ink-node-editor/assets/icon.png" width="160" alt="Inkblots logo">
+  <img src="ink-node-editor/assets/icon.png" width="100" alt="Inkblots logo">
+</p>
+
+<p align="center">
+  <strong>English</strong> · <a href="README.ja.md">日本語</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.pt-BR.md">Português (Brasil)</a>
 </p>
 
 # Inkblots
@@ -13,6 +17,17 @@ as the source of truth.
 
 [Download the latest Windows release](https://github.com/leoedson1/inkblots/releases/latest)
 
+## Preface
+
+I'd like to state upfront in very clear terms that **this project was basically vibecoded as all hell** because just I wanted a quick tool like this one to help me with my scenario writing and **I know jackshit about Javascript**. As it is right now, Inkblots works well enough for my personal objectives, but I want to keep refining the features until a lot of people can enjoy using, so **your feedback is deeply appreciated**. 
+
+#### Feedback that is NOT deeply appreciated
+- Your logo sucks (I know, I made it in a couple minutes, maybe I'll make it better later).
+- There is this misaligned "+" icon in one of the nodes (I already saw it, it's driving me crazy).
+- I don't appreciate your attempts at being funny (Many don't. Wiser men would've stopped by now).
+
+All that aside, as it is, Inkblots works well enough for a person like me, who's still learning Ink, so it might also work well for you! As I grow more familiar with the language I might refine node integrations with the script language's logic in ways that makes using with it more intuitive while still coherent. In this sense, I'd really like to hear from your experience with it, as it might expedite this process
+.
 ## Highlights
 
 - Arrange knots and stitches on an infinite canvas with draggable connections.
@@ -22,7 +37,7 @@ as the source of truth.
 - Manage global variables, constants, and lists from the inspector.
 - Compile and play stories with `inkjs`, including fresh-state testing from a selected knot.
 - Open several `.ink` files in tabs and reopen recent files from disk.
-- Use the interface in English, Japanese, Simplified Chinese, or Brazilian Portuguese.
+- Use the interface in English, Japanese, Simplified Chinese, or Brazilian Portuguese. (If JP and CN translations look weird, please let me know what to fix. About PTBR, trust me, **I know**.)
 
 ## Ink compatibility
 

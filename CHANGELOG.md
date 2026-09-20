@@ -3,6 +3,10 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.10.2] - 2026-09-20
+
+- Add localized README versions and language navigation
+
 ## [0.10.1] - 2026-09-20
 
 - Add a public-facing GitHub README with an overview, feature highlights, Ink
