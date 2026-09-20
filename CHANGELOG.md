@@ -3,6 +3,16 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.10.1] - 2026-09-20
+
+- Add a public-facing GitHub README with an overview, feature highlights, Ink
+  compatibility notes, installation and source-development instructions, and
+  links to the latest Windows release and detailed project documentation.
+
+Validation: all 28 unit tests passed; the version check confirmed that the
+package, lockfile, and changelog agree; all repository-relative README links and
+the displayed application icon resolve locally.
+
 ## [0.10.0] - 2026-09-20
 
 - Align Ink flow, editing workflows, inspector controls and story data management.
