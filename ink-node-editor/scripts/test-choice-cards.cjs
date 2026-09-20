@@ -69,7 +69,7 @@ app.whenReady().then(async()=>{
    const tr=token.getBoundingClientRect();mouse(editor,'mousemove',tr.left+2,tr.top+tr.height/2);
    check(!document.querySelector('#inspector-tooltip').classList.contains('show'),'Inspector tooltip waits before appearing');
    await new Promise(r=>setTimeout(r,520));
-   check(document.querySelector('#inspector-tooltip').classList.contains('show') && document.querySelector('#inspector-tooltip').textContent.includes('stays available'),'Hover describes the Ink choice structure');
+   check(document.querySelector('#inspector-tooltip').classList.contains('show') && document.querySelector('#inspector-tooltip .syntax-description').textContent.includes('stays available') && document.querySelector('#inspector-tooltip .syntax-name').textContent==='Sticky choice','Hover names and describes the Ink choice structure');
    editor.dispatchEvent(new Event('scroll'));check(!document.querySelector('#inspector-tooltip').classList.contains('show'),'Inspector scrolling dismisses tooltip');
    mouse(editor,'mousemove',tr.left+2,tr.top+tr.height/2);editor.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));await new Promise(r=>setTimeout(r,500));
    check(!document.querySelector('#inspector-tooltip').classList.contains('show'),'Text selection cancels pending tooltip');
@@ -82,7 +82,7 @@ app.whenReady().then(async()=>{
    check(document.querySelector('#inspector-tooltip').classList.contains('show'),'Syntax hit testing follows scrolled and wrapped text');
    InkblotsI18n.setLanguage('ja');mouse(editor,'mousemove',lr.left+3,lr.top+lr.height/2);await new Promise(r=>setTimeout(r,520));
    const description=INK_SNIPPETS.flatMap(g=>g.items).find(i=>i.id==='divert').desc;
-   check(document.querySelector('#inspector-tooltip').textContent===InkblotsI18n.t(description),'Inspector help uses the selected language');InkblotsI18n.setLanguage('en');A.undo();
+   check(document.querySelector('#inspector-tooltip .syntax-description').textContent===InkblotsI18n.t(description) && document.querySelector('#inspector-tooltip .syntax-name').textContent===InkblotsI18n.t('Divert'),'Inspector structure name and explanation use the selected language');InkblotsI18n.setLanguage('en');A.undo();
    A.select('platform');
    return checks;
   })()`);

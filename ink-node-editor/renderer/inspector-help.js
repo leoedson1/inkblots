@@ -14,6 +14,8 @@
     return null;
   }
   const tip=document.createElement('div');tip.id='inspector-tooltip';tip.className='ink-tooltip';tip.setAttribute('role','tooltip');document.body.append(tip);
+  const title=document.createElement('strong'),descriptionText=document.createElement('div');
+  title.className='syntax-name';descriptionText.className='syntax-description';tip.append(title,descriptionText);
   let timer=null,hit=null;
   function hide(){clearTimeout(timer);timer=null;hit=null;tip.classList.remove('show');}
   function attach(editor,code){
@@ -30,7 +32,7 @@
         const snippet=window.INK_SNIPPETS.flatMap(g=>g.items).find(i=>i.id===token.dataset.help);
         const description=snippet?.desc || (token.dataset.help==='include-help'?'Include another Ink file in this story.':'');
         if(!description)return;
-        I.bind(tip,description);tip.style.left='0px';tip.style.top='0px';tip.classList.add('show');
+        I.bind(title,snippet?.label || 'INCLUDE');I.bind(descriptionText,description);tip.style.left='0px';tip.style.top='0px';tip.classList.add('show');
         tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,current.x+14))+'px';
         tip.style.top=Math.max(8,Math.min(innerHeight-tip.offsetHeight-8,current.y+18))+'px';
       },450);

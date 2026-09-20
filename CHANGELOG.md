@@ -3,6 +3,16 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.7.1] - 2026-09-20
+
+- Show structure names above inspector tooltip explanations
+
+- Inspector hints now show a bold structure name (such as Sticky choice or Divert) above the explanation. Names follow the selected interface language.
+
+Validation: all 42 Electron choice/tooltip checks passed, including English structure headings and Japanese translations of both name and description.
+
+Build: Windows installer `Inkblots Setup 0.7.1.exe` generated successfully using clean staging. Packaged version and modified renderer files verified against source; installation was not tested.
+
 ## [0.7.0] - 2026-09-19
 
 - Add bottom choice controls and inspector syntax hints; fix node-level choice exits

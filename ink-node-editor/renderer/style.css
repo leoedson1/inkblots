@@ -552,3 +552,5 @@ button { cursor: pointer; }
 #inspector-tooltip {max-width:340px;z-index:220;}
 
 .node.has-choices > .prose {overflow:visible;}
+
+#inspector-tooltip .syntax-name { display:block; margin-bottom:5px; color:var(--fg); }
