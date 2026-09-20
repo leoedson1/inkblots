@@ -156,26 +156,64 @@ Pause over highlighted Ink syntax in the text inspector to see a short explanati
 near the cursor, in the selected interface language. Hints dismiss when you type,
 select text, scroll, or move away.
 
-## Direct editing and variable nodes
+## Story text editing, globals and recent files
 
-Double-click a node to edit its Ink body directly on the canvas. Ctrl+Enter or
-clicking outside finishes editing; Escape restores the original body. Changes
-are included in saves while typing. Choice nodes use the same header and prose
-style as other nodes; `*` marks a one-time choice and a circled `+` a sticky choice.
+Click the story text or a choice label on a node to edit the words directly.
+Enter finishes editing and Escape cancels it. The node keeps its layout and Ink
+markers, conditions, labels, output-only text and diverts stay in the source.
+Literal brackets typed into text are escaped so they do not become Ink structures.
+Sticky choices use a plain `+`; one-time choices use `*`.
 
-Story → Variable node, or searching Variable node in Shift+A, creates an Ink VAR
-declaration and its card. Existing VAR declarations also appear as cards. Edit
-the initial value on the card and drag its output to:
+The inspector's bottom half contains a global variable manager. Add variables,
+rename them, edit initial values or delete them there. Renaming updates source
+references; deletion leaves references visible for correction in the inspector.
+Edits support undo and are stored in ordinary Ink VAR declarations. Variable
+canvas cards and left-side choice inputs have been removed. Existing source
+assignments, conditions and named diverts are preserved.
 
-- A normal node: enter the value/expression assigned when that node is entered.
-- A choice's left input: enter an Ink condition, such as `score >= 3` or `has_key`.
-
-Assignment and condition tags mirror the source, and dashed variable wires follow
-their references. The × on a tag removes that statement/condition. Positions are
-saved in Inkblots metadata; the actual declarations, assignments and conditions
-are ordinary Ink and work outside the editor. Ordinary diverts can also connect
-to choice inputs, creating a named choice label and entering that branch directly.
+File → Open Recent keeps up to twelve opened or saved file paths across launches.
+Reopening reads the current file; an already-open path switches tabs without
+replacing unsaved edits. Missing files display an error. Clear recent files clears
+only the list. Recent paths are supported in the Electron desktop app.
 
 Delete/Backspace, Edit → Delete selected nodes, or the selection toolbar deletes
 the full selection (and selected knots' stitches) with one confirmation and one
-undo step. The Start/global node is preserved.
+undo step. Start remains, with a non-blocking message when deletion is attempted.
+
+## Ink flow and consistent editing (0.10.0)
+
+Choice cards distinguish each choice group, nested branches and gather continuations.
+Expand **Response text and effects** to edit output-only prose and see assignments
+where they execute. Shared choice/output text stays shared. This is a structural
+view of source; it does not evaluate conditions or predict runtime output. Use Play
+for that. The body connection beside the prose continues after the choice group
+when added with the side plus.
+
+The inspector divider is draggable and keyboard accessible (Up/Down; Home restores
+equal halves). Story text uses consistent typography and hover edit cues. Pencil
+buttons rename nodes and zones. Information tags have a plain cursor; connection
+ports retain the drag cursor and larger hit areas.
+
+The manager has separate Variables, Constants and Lists sections. Values accept
+Ink expressions, numeric keyboards and literal suggestions. List declarations have
+initial-item checkboxes. Invalid names show field-level feedback. Deleting a
+declaration asks for confirmation, reports occurrences elsewhere and offers undo.
+Enter finishes single-line editing; Escape cancels. The multiline script inspector
+uses Ctrl+Enter to finish and Escape to restore its focus-time text.
+
+Full script retains its unapplied draft per open tab when dismissed or when switching
+tabs. Apply it before saving; pending drafts mark the tab unsaved and participate
+in close warnings. Drafts remain in session memory and are not disk backups.
+
+Search reports matches and supports Enter/Shift+Enter or previous/next buttons.
+Ctrl+A selects graph nodes outside text fields. Group/Delete menu commands follow
+the selection. Open Recent offers per-entry removal and locating a replacement file.
+
+**Test from here** explains that previous gameplay is skipped. Its dialog can override
+literal number, boolean and string globals for this test only; expression/list
+initializers retain the compiler's defaults. Play and Ctrl+Enter start from the
+beginning. Functions are not valid standalone test entry points.
+
+Run `npm run test:design` for branch ownership, response editing, draft protection,
+selection/search, data management and test-state regression checks. Set
+`INKBLOTS_QA_DIR` to a writable directory to redirect Electron QA screenshots.

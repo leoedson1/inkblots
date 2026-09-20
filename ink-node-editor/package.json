@@ -1,7 +1,7 @@
 {
   "name": "inkblots",
   "productName": "Inkblots",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "A node-based editor for Ink scripts",
   "main": "main.js",
   "scripts": {
@@ -16,7 +16,8 @@
     "release:version": "node scripts/version.cjs",
     "test:languages": "node scripts/test-languages.cjs",
     "test:choices": "node scripts/test-choice-cards.cjs",
-    "test:nodes": "node scripts/test-node-tools.cjs"
+    "test:nodes": "node scripts/test-node-tools.cjs",
+    "test:design": "node scripts/test-design.cjs"
   },
   "dependencies": {
     "inkjs": "^2.3.2"

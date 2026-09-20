@@ -3,6 +3,36 @@
 Each completed change receives a version and a dated entry here. Versions match
 `ink-node-editor/package.json` and its lockfile.
 
+## [0.10.0] - 2026-09-20
+
+- Align Ink flow, editing workflows, inspector controls and story data management.
+- Choice cards now preserve branch ownership: expandable response text, editable output-only prose, nested choices, separate choice groups, gather continuations, and effects at their source position. Conditional-block branches no longer masquerade as gathers; spaced nested gathers retain the correct connection owner.
+- Keep the node-level exit beside prose and label it as continuation after choices. Revised DONE and fallback-choice explanations distinguish tunnel returns and automatic choice availability.
+- Add fresh-state testing with optional literal number, boolean and string overrides; these never modify the script. Ordinary Play and Ctrl+Enter start at the beginning; functions cannot be tested as story entry points.
+- Retain Full script drafts per tab across dismissal and tab switching. Pending drafts mark the file unsaved, block saving until applied and participate in close warnings. They are session data, not disk backups.
+- Add a persistent, mouse/keyboard-resizable inspector split; consistent narrative typography; editable-text hover cues; explicit rename buttons; larger control hit areas; named close buttons; and noninteractive styling for information tags.
+- Add Constants and Lists sections to the global manager, Ink value suggestions and list initial-selection checkboxes. Names have inline validation; deletion asks for confirmation with reference counts and undo feedback. Escape cancels edits consistently, with Ctrl+Enter finishing multiline inspector edits.
+- Search counts and navigates matches; Ctrl+A selects canvas nodes outside editors; Group/Delete menu availability follows selection. Open Recent supports individual removal and locating replacement files.
+- Updated the guide, hotkeys and Japanese, Simplified Chinese and Brazilian Portuguese translations.
+
+Validation: 28 unit tests, 43 new design/workflow assertions, 39 existing node/manager/recent checks, 42 choice/tooltip checks, 62 canvas assertions, 48 language checks, workspace lifecycle checks, and inspector alignment at four zoom levels passed. QA captures were redirected to a temporary folder after D: command writes failed with EBADF. Light/dark and compact-window screenshots were inspected. The tooltip test now waits for native scroll events to settle before hovering.
+
+Release: the versioning command succeeded in a temporary local checkout after the project-folder run failed with EBADF; its synchronized version changes were applied back to this project. The Windows installer was built there and copied to `ink-node-editor/dist/Inkblots Setup 0.10.0.exe`. Its packaged version and all 17 source/icon files were verified against the project. Installation was not tested. Git writes subsequently succeeded in the original repository, on branch `codex/design-consistency`; this release also records the previously uncommitted 0.9.0 work.
+
+## [0.9.0] - 2026-09-20
+
+- Replace variable cards with a global manager, edit story text directly, and add Open Recent
+- Removed variable canvas cards and left-side choice inputs. Existing declarations, assignments, conditions and named diverts remain in Ink source.
+- Split the inspector equally: script editing above and a global VAR manager below. Variables can be added, renamed, given initial values and deleted, with undo. Renaming updates Ink references; deletion leaves references for manual revision.
+- Node prose and choice labels now edit literal story text in place. Enter finishes and Escape cancels. Markers, conditions, output-only text, comments and divert targets are preserved; typed literal brackets are escaped. Empty nodes accept prose without exposing structures.
+- Sticky choices use a plain + marker. Start deletion displays a translated, non-blocking bottom warning; other selected nodes remain deletable.
+- Added File → Open Recent with twelve persisted paths, fresh disk reads, existing-tab activation that preserves unsaved edits, missing-file feedback and history clearing.
+- Updated the guide and Japanese, Chinese and Brazilian Portuguese translations.
+
+Validation: all 39 editor/manager/recent-file checks passed, including real pointer typing, source preservation, compilation, undo/cancel, tab isolation, save-before-blur, fresh disk reads, missing paths and the Start toast. All 26 unit tests, 42 choice checks, 48 language checks, workspace checks and inspector alignment at four zoom levels passed. All 62 canvas assertions passed; its subsequent screenshot export failed with a local EBADF file-handle error. Separate workflow screenshots were exported and visually reviewed. The release-version script ran in a writable staging copy after the same file-handle problem blocked its project writes; generated version changes were applied back to source.
+
+Build: Windows installer `Inkblots Setup 0.9.0.exe` generated in `C:/Users/user/AppData/Local/Temp/inkblots-release-0.9.0/ink-node-editor/dist`. Packaged version, changed renderer files and unchanged icon verified against source. Installation was not tested. Project-folder writes still fail (including installer copy and Git index.lock creation), so this release remains uncommitted and untagged pending filesystem recovery.
+
 ## [0.8.0] - 2026-09-20
 
 - Add direct node editing, variable connections, choice inputs, and batch deletion

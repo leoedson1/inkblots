@@ -80,7 +80,7 @@
   }
   const marquee = make('div'); marquee.id = 'selection-box'; marquee.hidden = true; canvas.appendChild(marquee);
   canvas.addEventListener('mousedown', e => {
-    if (!A.Tabs.length || e.button !== 0 || !e.shiftKey || e.target.closest('button,input,textarea,.sticky-note,.zone,#minimap,#quick-ink,.drawer')) return;
+    if (!A.Tabs.length || e.button !== 0 || !e.shiftKey || e.target.closest('[contenteditable],button,input,textarea,.sticky-note,.zone,#minimap,#quick-ink,.drawer')) return;
     e.preventDefault(); e.stopImmediatePropagation(); A.flushPendingEdit();
     box = {start:world(e),s:state()}; marquee.hidden = false;
     updateBox(e);
@@ -110,6 +110,7 @@
         I.bind(title, 'Double-click to rename', 'title');
         title.tabIndex=0; title.setAttribute('role','button'); I.bind(title,'Rename zone '+item.name,'aria-label');
         const rename = () => A.ask('Rename zone','',item.name,name=>{if(name && data().zones.includes(item)) mutate(()=>{item.name=name;});});
+        head.appendChild(button('✎','Rename zone',rename));
         title.ondblclick = e => { e.stopPropagation(); rename(); };
         title.onkeydown = e => {if(e.key==='Enter'){e.preventDefault();rename();}};
       }
@@ -176,7 +177,7 @@
   const results=make('div','quick-results');results.id='quick-results';results.setAttribute('role','listbox');search.setAttribute('aria-controls',results.id);
   popup.append(search,results);document.body.appendChild(popup);
   const entries=(window.INK_SNIPPETS||[]).flatMap(g=>g.items.map(it=>({label:it.label,desc:it.desc||'',group:g.label,it})));
-  entries.unshift({label:'Variable node',desc:'Declare a variable and connect assignments or choice conditions.',action:()=>window.InkblotsVariables.add(popupPoint)},{label:'Sticky note',desc:'Add an editable note to the canvas.',action:()=>addNote(popupPoint)},{label:'Zone / group',desc:'Organize selected nodes in a named area.',action:()=>addZone(popupPoint)});
+  entries.unshift({label:'Sticky note',desc:'Add an editable note to the canvas.',action:()=>addNote(popupPoint)},{label:'Zone / group',desc:'Organize selected nodes in a named area.',action:()=>addZone(popupPoint)});
   let filtered=[],active=0,returnFocus=null;
   function closeQuick(restore=false){popup.hidden=true;if(restore && returnFocus?.isConnected)returnFocus.focus();}
   function markActive(){[...results.children].forEach((row,i)=>{row.classList.toggle('active',i===active);row.setAttribute('aria-selected',String(i===active));});search.setAttribute('aria-activedescendant','quick-option-'+active);results.children[active]?.scrollIntoView({block:'nearest'});}
@@ -210,7 +211,6 @@
     const s=state(),v=s.view,items=[];
     data().zones.forEach(z=>items.push({...z,type:'zone'}));data().notes.forEach(n=>items.push({...n,type:'note'}));
     s.order.forEach(id=>{const n=s.nodes[id],p=s.layout[id];if(n._el && p)items.push({x:p[0],y:p[1],w:n._el.offsetWidth,h:n._el.offsetHeight,type:s.selection.includes(id)?'selected':'node'});});
-    document.querySelectorAll('.variable-card').forEach(card=>items.push({x:parseFloat(card.style.left),y:parseFloat(card.style.top),w:card.offsetWidth,h:card.offsetHeight,type:'node'}));
     const viewport={x:-v.x/v.k,y:-v.y/v.k,w:canvas.clientWidth/v.k,h:canvas.clientHeight/v.k};
     const all=[...items,viewport],x=Math.min(...all.map(r=>r.x))-40,y=Math.min(...all.map(r=>r.y))-40;
     const w=Math.max(...all.map(r=>r.x+r.w))-x+40,h=Math.max(...all.map(r=>r.y+r.h))-y+40,k=Math.min(188/w,108/h);

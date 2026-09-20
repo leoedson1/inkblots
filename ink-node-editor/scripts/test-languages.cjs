@@ -14,7 +14,7 @@ app.whenReady().then(async()=>{
   const errors=[];win.webContents.on('console-message',(_e,level,message)=>{if(level===3)errors.push(message);});
   const evaluate=code=>win.webContents.executeJavaScript(code);
   const settle=()=>evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
-  const out=path.join(__dirname,'../dist/qa');fs.mkdirSync(out,{recursive:true});
+  const out=process.env.INKBLOTS_QA_DIR || path.join(__dirname,'../dist/qa');fs.mkdirSync(out,{recursive:true});
   const timeout=setTimeout(()=>{console.error('Language checks timed out');app.exit(1);},60000);
   try {
     await win.loadFile(path.join(__dirname,'../renderer/index.html'));

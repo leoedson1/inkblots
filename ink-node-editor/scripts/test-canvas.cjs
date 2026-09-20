@@ -10,7 +10,7 @@ require('electron').ipcMain.on('system-languages', e => { e.returnValue=['en-US'
 app.whenReady().then(async()=>{
   const win=new BrowserWindow({show:false,width:1500,height:1050,titleBarStyle:'hidden',titleBarOverlay:{color:'#161a23',symbolColor:'#e3e7f0',height:48},webPreferences:{preload:path.join(__dirname,'../preload.js'),sandbox:true,contextIsolation:true,backgroundThrottling:false}});
   win.webContents.on('console-message',(_e,level,message)=>{if(level>=2)console.log(message);});
-  const out=path.join(__dirname,'../dist/qa');fs.mkdirSync(out,{recursive:true});
+  const out=(process.env.INKBLOTS_QA_DIR || path.join(__dirname,'../dist/qa'));fs.mkdirSync(out,{recursive:true});
   try{
     await win.loadFile(path.join(__dirname,'../renderer/index.html'));
     await win.webContents.insertCSS('*{transition:none!important;animation:none!important}');

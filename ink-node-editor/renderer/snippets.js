@@ -23,7 +23,7 @@ const INK_SNIPPETS = [
       { id: 'thread', label: 'Thread', kind: 'text', desc: 'Pull in a strand of content from elsewhere without leaving where you are, like a spliced-in aside.', text: '<- $0knot_name$0' },
       { id: 'glue', label: 'Glue', kind: 'text', desc: 'Join this line to the next so Ink doesn\'t insert a line break between them.', text: '<>$0' },
       { id: 'tag', label: 'Tag', kind: 'text', desc: 'Attach metadata to a line for your game code to read — Ink itself ignores it.', text: '# $0tag_name$0' },
-      { id: 'done', label: 'End of flow (DONE)', kind: 'text', desc: 'Ends the current flow (a thread or tunnel) without ending the whole story.', text: '-> DONE' },
+      { id: 'done', label: 'End of flow (DONE)', kind: 'text', desc: 'Finishes the current flow or thread. Use ->-> to return from a tunnel; END ends the whole story.', text: '-> DONE' },
       { id: 'end', label: 'End of story (END)', kind: 'text', desc: 'Ends the story completely — no further choices or content follow.', text: '-> END' },
     ],
   },
@@ -36,7 +36,7 @@ const INK_SNIPPETS = [
       { id: 'choice-mixed', label: 'Choice with shared and separate text', kind: 'text', desc: 'Text before the brackets always shows; the bracketed part is choice-only text.', text: '* You say "[$0Hello.$0]" you say.' },
       { id: 'choice-cond', label: 'Conditional choice', kind: 'text', desc: 'A choice that only appears when the condition in braces is true.', text: '* {$0condition$0} Choice text' },
       { id: 'choice-unvisited', label: 'Choice shown only if a knot is unvisited', kind: 'text', desc: 'A choice that hides itself once you\'ve already been to the named knot.', text: '* {not $0knot_name$0} Choice text' },
-      { id: 'fallback', label: 'Fallback choice', kind: 'text', desc: 'A choice with no visible text that\'s taken automatically if nothing else was chosen.', text: '* -> $0knot_name$0' },
+      { id: 'fallback', label: 'Fallback choice', kind: 'text', desc: 'Taken automatically when no visible choices are available. It does not wait for player inactivity.', text: '* -> $0knot_name$0' },
       {
         id: 'weave', label: 'Weave with a gather', kind: 'text', desc: 'Two choices that each lead somewhere, then rejoin at a shared gather line.',
         text: '* [$0]\n    A first branch.\n* [Second option]\n    A second branch.\n- Both paths meet here.',

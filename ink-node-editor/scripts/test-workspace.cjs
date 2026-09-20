@@ -19,7 +19,7 @@ app.whenReady().then(async () => {
   ipcMain.on('window-action', (event, action) => { if (event.sender === win.webContents) windowActions.push(action); });
   ipcMain.on('close-window', event => { if (event.sender === win.webContents) closeRequests++; });
   win.webContents.on('console-message', (_event, level, message) => { if (level >= 2) console.log(message); });
-  const output = path.join(__dirname, '../dist/qa'); fs.mkdirSync(output, { recursive: true });
+  const output = process.env.INKBLOTS_QA_DIR || path.join(__dirname, '../dist/qa'); fs.mkdirSync(output, { recursive: true });
   try {
     await win.loadFile(path.join(__dirname, '../renderer/index.html'));
     await win.webContents.insertCSS('* { transition: none !important; animation: none !important; }');

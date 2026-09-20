@@ -76,7 +76,7 @@ app.whenReady().then(async()=>{
    check(InkblotsSyntaxHelp.identify('/* a comment */','tok-comment')==='block-comment' && InkblotsSyntaxHelp.identify('-> END','tok-divert')==='end','Syntax help distinguishes block comments and terminal diverts');
    const bodyBefore=A.State.nodes.platform.body;
    editor.value=bodyBefore+'\\n'+Array.from({length:40},(_,i)=>'// note '+i).join('\\n')+'\\n+ [A long choice with enough text to wrap around the editor and test scrolling] -> cat_advice';editor.dispatchEvent(new Event('input',{bubbles:true}));A.flushPendingEdit();
-   editor.scrollTop=editor.scrollHeight;editor.dispatchEvent(new Event('scroll'));await new Promise(r=>setTimeout(r,60));
+   editor.scrollTop=editor.scrollHeight;editor.dispatchEvent(new Event('scroll'));await new Promise(r=>setTimeout(r,700));
    const last=[...document.querySelectorAll('.editor-wrap [data-help="divert"]')].at(-1),lr=last.getClientRects()[0];
    mouse(editor,'mousemove',lr.left+3,lr.top+lr.height/2);await new Promise(r=>setTimeout(r,520));
    check(document.querySelector('#inspector-tooltip').classList.contains('show'),'Syntax hit testing follows scrolled and wrapped text');
@@ -87,7 +87,7 @@ app.whenReady().then(async()=>{
    return checks;
   })()`);
   console.log(result.map(m=>'PASS '+m).join('\n'));
-  const out=path.join(__dirname,'../dist/qa');fs.mkdirSync(out,{recursive:true});
+  const out=(process.env.INKBLOTS_QA_DIR || path.join(__dirname,'../dist/qa'));fs.mkdirSync(out,{recursive:true});
   const hover=await win.webContents.executeJavaScript(`(()=>{const r=Inkblots.State.nodes.platform._el.getBoundingClientRect();return {x:Math.round(r.left+40),y:Math.round(r.top+40)};})()`);
   win.webContents.sendInputEvent({type:'mouseMove',...hover});
   for(const theme of ['dark','light']){

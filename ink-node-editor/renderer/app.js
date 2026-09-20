@@ -378,7 +378,7 @@ function closeTab(i) {
     activateTab(next);
     refreshChrome();
   };
-  if (t.dirty) ask('Close ' + t.fileName + '?', 'This file has unsaved changes that will be lost.', null, (ok) => { if (ok) doClose(); }, true);
+  if (t.dirty || t.sourceDraft != null) ask('Close ' + t.fileName + '?', 'This file has unsaved changes that will be lost.', null, (ok) => { if (ok) doClose(); }, true);
   else doClose();
 }
 
@@ -386,6 +386,7 @@ function closeTab(i) {
 // the first file reuses an untouched blank tab if one is sitting there,
 // the same courtesy VS Code and friends extend to an empty Untitled tab.
 function openFilesInTabs(files) {
+  window.InkblotsRecent?.record(files);
   files.forEach((f, i) => {
     const active = Tabs[activeTab];
     const reuse = i === 0 && active && !active.dirty && !active.filePath;
@@ -411,7 +412,7 @@ function renderTabBar() {
     tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-selected', i === activeTab ? 'true' : 'false');
     tab.title = t.filePath || t.fileName;
-    tab.appendChild(el('span', 'tab-name', t.fileName + (t.dirty ? ' \u2022' : '')));
+    tab.appendChild(el('span', 'tab-name', t.fileName + (t.dirty || t.sourceDraft != null ? ' \u2022' : '')));
     const x = el('span', 'tab-close', '\u2715');
     I.bind(x, 'Close', 'title');
     x.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); closeTab(i); });
@@ -491,6 +492,7 @@ function render() {
     const head = el('div', 'head');
     head.appendChild(el('span', 'kind'));
     head.appendChild(el('span', 'nm', n.kind === 'stitch' ? '= ' + n.name : n.name));
+    if(n.kind!=='start'){const rename=ui('button','rename-node','✎');I.bind(rename,'Rename node','title');I.bind(rename,'Rename node','aria-label');rename.onclick=()=>ask('Rename node','',n.name,value=>{if(value)renameNode(n.id,value);});head.append(rename);}
     d.appendChild(head);
 
     const decls = declsOf(n);
@@ -590,6 +592,7 @@ function anchorFor(nodeId, idx) {
   if (idx >= 0) {
     const pill = n._el.querySelector('.pill[data-idx="' + idx + '"]');
     if (pill) {
+      if(!pill.getClientRects().length || pill.getBoundingClientRect().width===0)return null;
       const r=pill.getBoundingClientRect(), nodeRect=n._el.getBoundingClientRect();
       const scale=nodeRect.width/w;
       return [pos[0]+w, pos[1]+(r.top-nodeRect.top+r.height/2)/scale];
@@ -622,7 +625,6 @@ function drawEdges() {
   const ns = 'http://www.w3.org/2000/svg';
   for (const e of State.edges) {
     const a = anchorFor(e.from, e.idx); let b = inletFor(e.to);
-    if(e.label){const n=State.nodes[e.to];const line=n.body.split('\n').findIndex(l=>l.match(RE_LABEL)?.[1]===e.label);const port=n._el?.querySelector('.choice-row[data-line="'+line+'"] .choice-inlet');if(port){const r=port.getBoundingClientRect();b=screenToWorld(r.left+r.width/2,r.top+r.height/2);}}
     if (!a || !b) continue;
     const dstr = e.from === e.to
       ? `M${a[0]},${a[1]} C${a[0] + 90},${a[1] - 40} ${b[0] - 90},${b[1] - 50} ${b[0]},${b[1]}`
@@ -666,11 +668,12 @@ function updateStatus() {
   uiText('#st-words', `${words} words`);
   const dot = $('#st-dot');
   dot.className = 'dot' + (broken ? ' err' : ' ok');
-  uiText('#st-state', broken ? (broken === 1 ? '1 unresolved divert' : `${broken} unresolved diverts`) : (State.dirty ? 'Unsaved changes' : 'Saved'));
-  $('#filename').innerHTML = '<b>' + esc(State.fileName) + '</b>' + (State.dirty ? ' •' : '');
-  document.title = (State.dirty ? '\u2022 ' : '') + State.fileName + ' — Inkblots';
+  const edited=State.dirty || State.sourceDraft != null;
+  uiText('#st-state', broken ? (broken === 1 ? '1 unresolved divert' : `${broken} unresolved diverts`) : (edited ? 'Unsaved changes' : 'Saved'));
+  $('#filename').innerHTML = '<b>' + esc(State.fileName) + '</b>' + (edited ? ' •' : '');
+  document.title = (edited ? '\u2022 ' : '') + State.fileName + ' — Inkblots';
   renderTabBar();
-  if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(State.dirty, State.fileName);
+  if (NATIVE && NATIVE.setEdited) NATIVE.setEdited(State.dirty || State.sourceDraft != null, State.fileName);
 }
 
 function setDirty(v) {
@@ -719,13 +722,16 @@ function renderInspector() {
 
   const head = el('div', 'side-head');
   const name = el('input');
+  I.bind(name,'Rename node','aria-label');
   name.value = n.name;
   name.disabled = n.kind === 'start';
-  name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); });
+  name.addEventListener('keydown', e => { if (e.key === 'Enter') name.blur(); if(e.key==='Escape'){e.stopPropagation();name.value=n.name;name.blur();} });
   name.addEventListener('change', () => renameNode(n.id, name.value.trim()));
   head.appendChild(name);
-  const playHere = ui('button', 'btn', 'Play from here');
-  playHere.onclick = () => startPlay(n.id);
+  const playHere = ui('button', 'btn', 'Test from here');
+  I.bind(playHere,'Starts with fresh state; earlier choices and effects are not replayed.','title');
+  playHere.onclick = () => window.InkblotsTest ? window.InkblotsTest.open(n.id,values=>startPlay(n.id,values)) : startPlay(n.id);
+  playHere.disabled=n.kind==='function';
   head.appendChild(playHere);
   box.appendChild(head);
 
@@ -742,6 +748,8 @@ function renderInspector() {
   const ta = el('textarea');
   ta.spellcheck = true;
   ta.value = n.body;
+  let editOriginal=n.body;
+  ta.addEventListener('focus',()=>{flushPendingEdit();editOriginal=n.body;});
   code.innerHTML = hl(n.body);
   const sync = () => {
     code.innerHTML = hl(ta.value);
@@ -762,6 +770,8 @@ function renderInspector() {
   });
   ta.addEventListener('scroll', () => { pre.scrollTop = ta.scrollTop; pre.scrollLeft = ta.scrollLeft; });
   ta.addEventListener('keydown', e => {
+    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();flushPendingEdit();updateBody(n.id,editOriginal);renderInspector();return;}
+    if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();e.stopPropagation();flushPendingEdit();ta.blur();return;}
     if (e.key === 'Tab') { e.preventDefault(); const s = ta.selectionStart; ta.setRangeText('  ', s, ta.selectionEnd, 'end'); sync(); }
   });
   wrap.appendChild(pre); wrap.appendChild(ta);
@@ -863,6 +873,7 @@ function deleteNode(id) { deleteNodes([id]); }
 function deleteSelectedNodes() { deleteNodes(State.selection.length ? State.selection : [State.sel]); }
 function deleteNodes(ids) {
   flushPendingEdit();
+  if(ids.some(id=>State.nodes[id]?.kind==='start'))toast('The Start node cannot be deleted.');
   const state=State,chosen=new Set(ids.filter(id=>State.nodes[id] && State.nodes[id].kind!=='start'));
   if(!chosen.size)return;
   const removed=new Set([...chosen,...State.order.filter(id=>chosen.has(State.nodes[id].parent))]);
@@ -1042,7 +1053,6 @@ function bbox() {
     x0 = Math.min(x0,item.x); y0 = Math.min(y0,item.y);
     x1 = Math.max(x1,item.x+item.w); y1 = Math.max(y1,item.y+item.h);
   }
-  document.querySelectorAll('.variable-card').forEach(d=>{const x=parseFloat(d.style.left),y=parseFloat(d.style.top);x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+d.offsetWidth);y1=Math.max(y1,y+d.offsetHeight);});
   if (x0 === Infinity) return null;
   return { x0, y0, x1, y1 };
 }
@@ -1090,7 +1100,7 @@ let drag = null, link = null, pan = null;
 canvas.addEventListener('mousedown', (ev) => {
   if (!Tabs.length) return;
   if (ev.button !== 0 && ev.button !== 1) return;
-  if (ev.target.closest('textarea,input,button,.choice-inlet,.variable-card,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
+  if (ev.target.closest('[contenteditable],textarea,input,button,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions, .comment-badge')) return;
   const pill = ev.target.closest('.pill[data-idx]');
   const add = ev.target.closest('.addout');
   const node = ev.target.closest('.node');
@@ -1154,9 +1164,7 @@ window.addEventListener('mouseup', (ev) => {
     link.path.remove();
     const target = node && node.dataset.id;
     if (target && target !== link.from) {
-      const row=over.closest('.choice-row');
-      if(row && window.InkblotsVariables){window.InkblotsVariables.connectFlow(link.from,link.idx,target,Number(row.dataset.line));}
-      else if (link.idx >= 0) retarget(link.from, link.idx, divertName(State.nodes[link.from], target));
+      if (link.idx >= 0) retarget(link.from, link.idx, divertName(State.nodes[link.from], target));
       else addDivert(link.from, target);
     } else if (!node) {
       const w = screenToWorld(ev.clientX, ev.clientY);
@@ -1198,7 +1206,7 @@ canvas.addEventListener('click', (ev) => {
 canvas.addEventListener('dblclick', (ev) => {
   if (!Tabs.length) return;
   if (ev.target.closest('.node')) { return; }
-  if (ev.target.closest('textarea,input,button,.choice-inlet,.variable-card,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
+  if (ev.target.closest('[contenteditable],textarea,input,button,.addchoice, .zone, .sticky-note, #minimap, #quick-ink, #selection-actions')) return;
   const w = screenToWorld(ev.clientX, ev.clientY);
   ask('New knot', 'Knots are the chapters of an Ink script.', 'new_knot', (name) => {
     if (name) addKnot(name, [Math.round(w[0]) - 120, Math.round(w[1]) - 40]);
@@ -1242,7 +1250,7 @@ function ask(title, desc, value, cb, confirmOnly, okLabel = 'OK') {
 }
 function confirmWindowClose() {
   flushPendingEdit();
-  const dirtyTabs = Tabs.filter(t => t.dirty);
+  const dirtyTabs = Tabs.filter(t => t.dirty || t.sourceDraft != null);
   if (!dirtyTabs.length) return Promise.resolve(true);
   const title = dirtyTabs.length === 1 ? 'Close ' + dirtyTabs[0].fileName + '?' : 'Close Inkblots?';
   const desc = dirtyTabs.length === 1
@@ -1299,6 +1307,7 @@ async function openFile() {
 
 async function saveFile(forceDialog) {
   if (!Tabs.length) return;
+  if (State.sourceDraft != null) { openSource(); toast('Apply the Full script draft before saving.'); return; }
   flushPendingEdit();
   const { text } = serialize(true);
   if (NATIVE) {
@@ -1309,6 +1318,7 @@ async function saveFile(forceDialog) {
     State.filePath = p;
     State.fileName = p.split(/[\\/]/).pop();
     setDirty(false);
+    window.InkblotsRecent?.record([{path:p,name:State.fileName}]);
     toast('Saved ' + State.fileName);
     return;
   }
@@ -1390,17 +1400,20 @@ function renderProblems() {
 }
 
 let story = null;
-function startPlay(fromId) {
+function startPlay(fromId, overrides={}) {
   const r = compile();
   const hasError = State.problems.some(p => !p.warn);
   if (hasError || !r.story) { renderProblems(); $('#play').classList.remove('open'); return; }
   if (State.problems.length) renderProblems(); else $('#errors').classList.remove('open');
   story = r.story;
+  try { for(const [name,value]of Object.entries(overrides)) story.variablesState[name]=value; }
+  catch(e){toast(String(e.message||e));return;}
   $('#play').classList.add('open');
   $('#play-text').textContent = '';
   uiText('#play-from', fromId && fromId !== START_ID ? 'from ' + fromId : '');
   $('#play').dataset.from = fromId || '';
   if (fromId && fromId !== START_ID) {
+    const notice=ui('div','test-state-notice','Fresh test state · earlier choices and effects are not replayed.');$('#play-text').append(notice);
     try { story.ChoosePathString(fromId); } catch (e) { toast('Cannot start at ' + fromId); }
   }
   step();
@@ -1441,13 +1454,21 @@ function step() {
 /* ------------------------------------------------------------- source view */
 
 function openSource() {
-  $('#srctext').value = serialize(false).text;
+  $('#srctext').value = State.sourceDraft ?? serialize(false).text;
   $('#source-view').classList.add('open');
+  rememberSourceDraft();
   $('#b-source').setAttribute('aria-pressed', 'true');
 }
-function closeSource() {
+function closeSource(skipDraft = false) {
+  if (skipDraft !== true && $('#source-view').classList.contains('open')) rememberSourceDraft();
   $('#source-view').classList.remove('open');
   $('#b-source').setAttribute('aria-pressed', 'false');
+}
+function rememberSourceDraft() {
+  const value = $('#srctext').value;
+  State.sourceDraft = value === serialize(false).text ? null : value;
+  updateStatus();
+  uiText('#source-draft-state', State.sourceDraft == null ? 'Applied' : 'Draft retained until applied');
 }
 
 
@@ -1700,7 +1721,8 @@ $('#b-zoomout').onclick = () => zoomAt(canvas.clientWidth / 2, canvas.clientHeig
 $('#b-zoomfit').onclick = fitView;
 $('#b-source').onclick = () => $('#source-view').classList.contains('open') ? closeSource() : openSource();
 $('#b-srcclose').onclick = closeSource;
-$('#b-srcapply').onclick = () => { pushHistory(); load($('#srctext').value, { keepView: true, keepHistory: true, keepOrganizer: true, dirty: true }); closeSource(); toast('Graph rebuilt'); };
+$('#srctext').addEventListener('input', rememberSourceDraft);
+$('#b-srcapply').onclick = () => { pushHistory(); load($('#srctext').value, { keepView: true, keepHistory: true, keepOrganizer: true, dirty: true }); State.sourceDraft=null; closeSource(true); toast('Graph rebuilt'); };
 $('#search').addEventListener('input', e => { filterText = e.target.value; applyFilter(); });
 
 $('#b-theme').onclick = () => {
@@ -1712,7 +1734,7 @@ $('#b-theme').onclick = () => {
 try { const t = localStorage.getItem('inkblots-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 
 window.addEventListener('keydown', (e) => {
-  const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+  const typing = document.activeElement.isContentEditable || /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
   const mod = e.metaKey || e.ctrlKey;
   if (!Tabs.length) {
     if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); openFile(); }
@@ -1722,7 +1744,7 @@ window.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); saveFile(e.shiftKey); }
   else if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); openFile(); }
   else if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#search').focus(); }
-  else if (mod && e.key === 'Enter') { e.preventDefault(); startPlay(State.sel); }
+  else if (mod && e.key === 'Enter') { e.preventDefault(); startPlay(null); }
   else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && !typing) { e.preventDefault(); undo(); }
   else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) && !typing) { e.preventDefault(); redo(); }
   else if (!typing && (e.key === 'Delete' || e.key === 'Backspace') && State.sel) { e.preventDefault(); deleteSelectedNodes(); }
@@ -1784,7 +1806,7 @@ window.addEventListener('beforeunload', (e) => {
   // an actual dialog, so this guard only needs to do anything in the plain
   // browser build, where that's the only mechanism available at all.
   if (NATIVE) return;
-  if (Tabs.some(t => t.dirty)) { e.preventDefault(); e.returnValue = ''; }
+  if (Tabs.some(t => t.dirty || t.sourceDraft != null)) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // dropping .ink/.txt files onto the window opens each in its own tab,
@@ -1885,7 +1907,7 @@ window.Inkblots = {
   get Tabs() { return Tabs; },
   get activeTab() { return activeTab; },
   parse, serialize, load, compile, autoLayout, render,
-  saveFile, undo, redo, cancelInkTooltip,
+  saveFile, undo, redo, cancelInkTooltip, centerOn, toast,
   pushHistory, setDirty, select, ask, screenToWorld, applyTransform, drawEdges, applySnippet, addKnot, renameNode,
   deleteSelectedNodes, updateBody, retarget, divertName, addChoice, addDivert, addTab, switchTab, closeTab, newFile, openFilesInTabs, autosaveTick, flushPendingEdit, confirmWindowClose,
 };

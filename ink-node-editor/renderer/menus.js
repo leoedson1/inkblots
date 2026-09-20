@@ -12,6 +12,7 @@
   const items = [
     ['File', [
       ['New file', () => A.newFile(), 'Ctrl+N'], ['Open…', () => click('b-open'), 'Ctrl+O'],
+      ['Open Recent', () => window.InkblotsRecent.open()],
       ['Save', () => click('b-save'), 'Ctrl+S', true], ['Save as…', () => A.saveFile(true), 'Ctrl+Shift+S', true],
       ['Close tab', () => A.closeTab(A.activeTab), 'Ctrl+W', true],
       ['Close Inkblots', closeWindow, 'Alt+F4'],
@@ -19,7 +20,7 @@
     ['Edit', [
       ['Undo', () => edit('undo'), 'Ctrl+Z', true], ['Redo', () => edit('redo'), 'Ctrl+Shift+Z', true],
       ['Cut', () => native('cut'), 'Ctrl+X', true], ['Copy', () => native('copy'), 'Ctrl+C', true],
-      ['Paste', () => native('paste'), 'Ctrl+V', true], ['Select all', () => native('selectAll'), 'Ctrl+A', true],
+      ['Paste', () => native('paste'), 'Ctrl+V', true], ['Select all', () => {if(document.activeElement.isContentEditable || /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))native('selectAll');else InkblotsCanvas.selectMany(A.State.order.filter(id=>A.State.nodes[id]._el));}, 'Ctrl+A', true],
       ['Delete selected nodes', () => A.deleteSelectedNodes(), 'Delete', true],
       ['Find knot', () => $('search').focus(), 'Ctrl+F', true],
     ]],
@@ -34,7 +35,6 @@
     ['Story', [
       ['Insert Ink at cursor…', () => { const r = document.querySelector('#canvas').getBoundingClientRect(); window.InkblotsCanvas.openQuick(r.left+r.width/2,r.top+r.height/2); }, 'Shift+A', true],
       ['Group selected nodes', () => window.InkblotsCanvas.addZone(), 'Ctrl+G', true],
-      ['Variable node', () => window.InkblotsVariables.add(), '', true],
       ['Sticky note', () => window.InkblotsCanvas.addNote(), '', true],
       ['Add knot…', () => click('b-addknot'), '', true], ['Tidy layout', () => click('b-layout'), 'Ctrl+L', true],
       ['Full script', () => click('b-source'), 'Ctrl+E', true], ['Play', () => click('b-play'), 'Ctrl+Enter', true],
@@ -48,7 +48,7 @@
     ['Help', [['Inkblots user guide', () => window.showInkblotsGuide()], ['Hotkeys guide', () => window.showInkblotsHotkeys()], ['Ink writing guide', () => native('help')]]],
   ];
   function edit(action) {
-    if (/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) native(action);
+    if (document.activeElement.isContentEditable || /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) native(action);
     else A[action]();
   }
   function closeMenus(restore = false) {
@@ -64,6 +64,7 @@
     const menu = top.nextElementSibling;
     menu.classList.add('open'); top.setAttribute('aria-expanded', 'true');
     menu.querySelectorAll('[data-needs-file]').forEach(el => { el.disabled = !A.Tabs.length; });
+    menu.querySelectorAll('[data-selection-action]').forEach(el=>{const ids=A.State.selection.length?A.State.selection:[A.State.sel];el.disabled=!A.Tabs.length || !ids.some(id=>A.State.nodes[id] && (el.dataset.selectionAction!=='Delete selected nodes'||A.State.nodes[id].kind!=='start'));});
     if (focus) menu.querySelector('[role="menuitem"]:not(:disabled)')?.focus();
   }
   nav.addEventListener('mousedown', e => {
@@ -86,6 +87,7 @@
       if (shortcut) { const hint = document.createElement('span'); hint.className = 'hint'; hint.textContent = N?.platform === 'darwin' ? shortcut.replace('Ctrl', 'Cmd') : shortcut; row.appendChild(hint); }
       if (locale) { row.dataset.language=locale; const mark=document.createElement('span');mark.className='hint language-check';row.appendChild(mark); }
       if (needsFile) row.dataset.needsFile = 'true';
+      if(['Group selected nodes','Delete selected nodes'].includes(name))row.dataset.selectionAction=name;
       row.onclick = () => { closeMenus(true); if (!needsFile || A.Tabs.length) action(); };
       menu.appendChild(row);
     });

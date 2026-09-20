@@ -1,6 +1,15 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const view=require('../renderer/choice-view');
+test('Conditional block branches do not end the owning choice',()=>{
+  const v=view(node('* [Enter]\n{ ready:\n- true:\n  -> room\n- else:\n  -> hall\n}\n* [Wait] -> outside',[3,5,7]));
+  assert.deepEqual(v.rows.map(row=>row.exits.map(out=>out.idx)),[[0,1],[2]]);
+});
+test('Spaced nested gathers keep the outer choice owner',()=>{
+  const v=view(node('* [Outer]\n* * [Inner] -> inner\n- - Rejoin inner\n-> outer\n- Rejoin all\n-> end',[1,3,5]));
+  assert.deepEqual(v.rows.map(row=>row.exits.map(out=>out.idx)),[[1],[0]]);
+  assert.equal(v.rowExits.has(2),false);
+});
 function node(body,lines=[]) {return {body,out:lines.map((line,idx)=>({idx,raw:'target'+idx})),diverts:lines.map(line=>({line}))};}
 test('Separates scene prose and conditionally available choice labels without changing source',()=>{
   const n=node('The board clatters.\n+ [Train] -> train\n+ {met_cat} [Ask the cat] -> cat // note',[1,2]);const original=n.body;

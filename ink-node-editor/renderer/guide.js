@@ -54,7 +54,7 @@
   ],
   [
     "p",
-    "Write // a comment or /* a longer comment */ in Ink. Hover or focus a node’s balloon to read its comments. Story → Play (Ctrl+Enter) tests the story; Play from here starts at the selected knot. Problems shows compiler errors. Full Feature Demo demonstrates the language and canvas tools."
+    "Hover a node’s balloon for comments. Play (Ctrl+Enter) starts the story. Test from here starts a fresh run at the selected knot; optional test values do not change the script. Problems shows compiler errors."
   ],
   [
     "h3",
@@ -70,15 +70,23 @@
   ]
 ];
   sections.push(['h3','Node editing and variables'],
-    ['p','Double-click a node to type Ink directly. Ctrl+Enter or clicking outside applies the edit; Escape cancels it.'],
-    ['p','The * marker is a one-time choice; the circled + is a sticky choice. Use Story → Variable node or search Variable node in Shift+A to create a declaration.'],
-    ['p','Drag a variable output to a node to assign a value on entry, or to a choice input on the left to add a condition. Edit the expression in the prompt. Tags show assignments and conditions; × removes them. Ordinary diverts can also target choice inputs, entering the named branch directly.']);
+    ['p','Click story text or a choice label on a node to edit its words. Enter finishes editing; Escape cancels. Ink markers, conditions and diverts stay in the inspector. Sticky choices use + and one-time choices use *.'],
+    ['p','The bottom half of the inspector manages global variables. Add, rename, edit initial values or delete them there. Renaming updates Ink references; deleting a variable leaves its uses for you to revise.'],
+    ['p','File → Open Recent reopens recently opened or saved files. An already open file switches to its tab, preserving unsaved edits. Clear recent files only clears the list. The Start node cannot be deleted; attempts show a message at the bottom.']);
   sections.forEach(([tag,text])=>guide.append(ui(tag,text)));
+  for(const text of [
+    'Expand Response text and effects to edit a choice’s response. Shared text also appears after choosing. Nested choices stay within their branch; Rejoin / continue marks a gather. Effects execute where they appear, not automatically on node entry.',
+    'Drag the inspector divider or focus it and use Up/Down to resize. Home or double-click restores equal halves. Variables, constants and lists have separate sections; lists offer initial-item checkboxes. Deletion asks for confirmation and warns about references.',
+    'Full script keeps an unapplied draft when closed or when switching tabs. Apply changes before saving. Closing a file or the app warns about drafts. Drafts are not a disk backup.',
+    'Enter finishes a single-line edit and Escape cancels it. In the multiline inspector, Ctrl+Enter finishes and Escape restores the text from when editing began. Ctrl+A selects nodes on the canvas and text in editors.',
+    'Search shows matches; Enter/Shift+Enter or the arrow buttons move between them. Open Recent lets you remove one entry or locate a moved file. Use the pencil button to rename nodes and zones.'
+  ])guide.append(ui('p',text));
   const hotkeys=createGuide('hotkeys-guide','Inkblots · Hotkeys');
   hotkeys.append(ui('p','On macOS, use Cmd instead of Ctrl (tab switching uses Ctrl). Text fields keep their normal editing shortcuts.'));
   const table=document.createElement('table');
   const head=document.createElement('tr');head.append(ui('th','Shortcut'),ui('th','Action'));table.append(head);
   const rows=[['Ctrl+N','New file'],['Ctrl+O','Open'],['Ctrl+S','Save'],['Ctrl+Shift+S','Save as…'],['Ctrl+W','Close tab'],['Alt+F4','Close Inkblots'],['Ctrl+Z','Undo'],['Ctrl+Shift+Z / Ctrl+Y','Redo'],['Ctrl+X / Ctrl+C / Ctrl+V','Cut / Copy / Paste'],['Ctrl+A','Select all'],['Ctrl+F','Find knot'],['Ctrl+L','Tidy layout'],['Ctrl+E','Full script'],['Ctrl+Enter','Play'],['Ctrl+G','Group selected nodes'],['Shift + left drag','Box select'],['Shift+A / right-click empty space','Insert Ink at cursor…'],['Delete / Backspace','Delete selected nodes'],['Ctrl+Tab / Ctrl+Shift+Tab','Next tab / Previous tab'],['Ctrl++ / Ctrl+-','Zoom interface in / out'],['Ctrl+0','Reset interface zoom'],['F11','Full screen'],['F5 / Ctrl+R','Reload'],['Ctrl+Shift+I','Developer tools'],['F10 / Alt+F','Focus menu bar'],['Escape','Dismiss menu or dialog'],['Arrow keys','Navigate minimap']];
+  rows.push(['Enter / Shift+Enter','Next / previous search match'],['Up / Down / Home','Resize / reset inspector split'],['Ctrl+Enter (inspector)','Finish script editing'],['Escape (editor)','Cancel current edit']);
   rows.forEach(([key,action])=>{const row=document.createElement('tr');row.append(ui('td',key),ui('td',action));table.append(row);});hotkeys.append(table);
   window.showInkblotsGuide=()=>{if(!guide.open)guide.showModal();};
   window.showInkblotsHotkeys=()=>{if(!hotkeys.open)hotkeys.showModal();};
